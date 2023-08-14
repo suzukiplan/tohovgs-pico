@@ -1,0 +1,5 @@
+.pio
+src/rom_*.c
+include/roms.hpp
+.vscode
+.DS_Store
