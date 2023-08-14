@@ -29,7 +29,7 @@
 |RaspberryPi Pico|ILI9341 (LCD Module)|
 |:-|:-|
 |`3.3V`|`VCC`|
-|<s>`3.3V`</s> `GPIO27`|`LED`|
+|`GPIO27`|`LED`|
 |`GND`|`GND`|
 |`GPIO17 (SPI0 CS)`|`CS`|
 |`GPIO22`|`RESET`|
