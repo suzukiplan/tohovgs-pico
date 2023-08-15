@@ -49,7 +49,7 @@ TODO: あとで書く
 
 本プログラムのライセンスは [GPLv3](LICENSE.txt) とします。
 
-また、本プログラムには以下のソフトウェアに依存しているため、再配布時にはそれぞれのライセンス条項の遵守をお願いいたします。
+また、本プログラムでは以下の Open Source Software を利用しています。
 
 - TFT eSPI
     - Web Site: [https://github.com/Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI)
