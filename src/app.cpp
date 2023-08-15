@@ -7,7 +7,13 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 
-#define BGCOLOR 0x1148
+#define COLOR_BG 0b0001000101001000
+#define COLOR_BG_DARK 0b0000100010100100
+#define COLOR_BG_LIGHT 0b0010001010010000
+#define COLOR_BLACK 0x0000
+#define COLOR_GRAY 0b1000010000010000
+#define COLOR_GRAY_DARK 0b0100001000001000
+#define COLOR_WHITE 0xFFFF
 
 static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
 {
@@ -22,7 +28,7 @@ static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
         } else if ('A' <= buf[i] && buf[i] <= 'Z') {
             gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + (buf[i] - 'A') * 32]);
         } else if (' ' == buf[i]) {
-            gfx->fillRect(x, y, 4, 8, BGCOLOR);
+            gfx->fillRect(x, y, 4, 8, COLOR_BG);
         } else if ('.' == buf[i]) {
             gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + 832]);
         } else if (':' == buf[i]) {
@@ -31,24 +37,28 @@ static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
     }
 }
 
+typedef struct Position_ {
+    int x;
+    int y;
+    int w;
+    int h;
+} Position;
+
 class Keyboard
 {
   private:
     TFT_eSPI* gfx;
-    struct Position {
-        int x;
-        int y;
-    } pos;
+    Position pos;
     int key;
 
     void render(int ch)
     {
-        this->gfx->fillRect(this->pos.x, this->pos.y, 200, 10, BGCOLOR);
+        this->gfx->fillRect(this->pos.x, this->pos.y, this->pos.w, this->pos.h, COLOR_BG);
         // チャネル名と楽器を描画
         printSmallFont(this->gfx, this->pos.x, this->pos.y, "CH%d TRI ", ch);
         // 白鍵を描画
         for (int i = 0; i < 50; i++) {
-            this->gfx->fillRect(this->pos.x + 32 + i * 4, this->pos.y, 3, 9, 0xFFFF);
+            this->gfx->fillRect(this->pos.x + 32 + i * 4, this->pos.y, 3, 9, COLOR_WHITE);
         }
         // 黒鍵を描画
         for (int i = 0; i < 49; i++) {
@@ -58,7 +68,7 @@ class Keyboard
                 case 3:
                 case 5:
                 case 6:
-                    this->gfx->fillRect(this->pos.x + 32 + i * 4 + 2, this->pos.y, 3, 7, 0x0000);
+                    this->gfx->fillRect(this->pos.x + 32 + i * 4 + 2, this->pos.y, 3, 7, COLOR_BLACK);
                     break;
             }
         }
@@ -70,13 +80,77 @@ class Keyboard
         this->gfx = gfx;
         this->pos.x = x;
         this->pos.y = y;
+        this->pos.w = 232;
+        this->pos.h = 10;
         this->key = -1;
         render(ch);
     }
 };
 
+class Seekbar
+{
+  private:
+    TFT_eSPI* gfx;
+    Position pos;
+
+    void render()
+    {
+        this->gfx->drawLine(204, this->pos.y, 204, this->pos.y + this->pos.h, COLOR_GRAY);
+        this->gfx->drawLine(0, this->pos.y, 240, this->pos.y, COLOR_GRAY);
+        this->renderDuration(0);
+        this->renderProgress(100, 0);
+    }
+
+  public:
+    Seekbar(TFT_eSPI* gfx, int y)
+    {
+        this->gfx = gfx;
+        this->pos.x = 0;
+        this->pos.y = y;
+        this->pos.w = 240;
+        this->pos.h = 24;
+        render();
+    }
+
+    void renderDuration(int sec)
+    {
+        printSmallFont(this->gfx, 4, this->pos.y + (this->pos.h - 8) / 2 + 1, "%02d:%02d", sec / 60, sec % 60);
+    }
+
+    void renderProgress(int max, int progress)
+    {
+        Position p;
+        progress = (progress * 100) / max;
+        progress *= 164;
+        progress /= 100;
+        if (160 < progress) progress = 160;
+        this->gfx->fillRect(32 + progress, this->pos.y + 3, 4, this->pos.h - 6, COLOR_WHITE);
+        if (progress < 160) {
+            p.x = 32 + progress + 4;
+            p.y = this->pos.y + (this->pos.h - 2) / 2;
+            p.w = 160 - progress;
+            p.h = 1;
+            this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
+            this->gfx->fillRect(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
+            this->gfx->fillRect(p.x, pos.y + 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+        }
+        if (0 < progress) {
+            p.x = 32;
+            p.y = this->pos.y + (this->pos.h - 2) / 2;
+            p.w = progress;
+            p.h = 1;
+            this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
+            this->gfx->fillRect(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
+            this->gfx->fillRect(p.x, pos.y + 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+        }
+    }
+};
+
 static TFT_eSPI gfx(240, 320);
 static Keyboard* keys[6];
+static Seekbar* seekbar;
 
 void setup()
 {
@@ -91,19 +165,20 @@ void setup()
     gfx.init();
     gfx.startWrite();
     gfx.setRotation(2);
-    gfx.fillScreen(BGCOLOR);
+    gfx.fillScreen(COLOR_BG);
 
     printSmallFont(&gfx, 4, 4, "SONG NOT SELECTED");
     printSmallFont(&gfx, 4, 16, "INDEX     00000  PLAYING 0 OF 0");
     printSmallFont(&gfx, 4, 24, "LEFT TIME 00:00");
 
-    gfx.drawLine(0, 34, 240, 34, 0x8410);
-    gfx.drawLine(0, 36, 240, 36, 0xFFFF);
+    gfx.drawLine(0, 34, 240, 34, COLOR_GRAY);
+    gfx.drawLine(0, 36, 240, 36, COLOR_WHITE);
     for (int i = 0; i < 6; i++) {
         keys[i] = new Keyboard(&gfx, i, 4, 40 + i * 10);
     }
-    gfx.drawLine(0, 101, 240, 101, 0xFFFF);
-    gfx.drawLine(0, 103, 240, 103, 0x8410);
+    gfx.drawLine(0, 101, 240, 101, COLOR_WHITE);
+    gfx.drawLine(0, 103, 240, 103, COLOR_GRAY);
+    seekbar = new Seekbar(&gfx, 320 - 24);
     gfx.endWrite();
 }
 
