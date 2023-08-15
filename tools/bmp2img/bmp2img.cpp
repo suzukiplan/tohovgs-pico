@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 typedef struct BitmapHeader_ {
     int isize;             /* 情報ヘッダサイズ */
@@ -18,12 +19,55 @@ typedef struct BitmapHeader_ {
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2) {
-        fprintf(stderr, "bmp2img /path/to/image.bmp\n");
+    int tW = 0;
+    int tH = 0;
+    char* path = nullptr;
+    bool isError = false;
+
+    for (int i = 1; !isError && i < argc; i++) {
+        if (argv[i][0] == '-') {
+            switch (argv[i][1]) {
+                case 't':
+                    i++;
+                    if (argc <= i) {
+                        isError = true;
+                    } else {
+                        tW = atoi(argv[i]);
+                        if (tW < 1) {
+                            isError = true;
+                        } else {
+                            const char* cp = argv[i];
+                            while (isdigit(*cp)) cp++;
+                            if (*cp != 'x') {
+                                isError = true;
+                            } else {
+                                cp++;
+                                tH = atoi(cp);
+                                if (tH < 1) {
+                                    isError = true;
+                                }                                
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    fprintf(stderr, "unknown option: %s\n", argv[i]);
+                    isError = true;
+                    break;
+            }
+        } else {
+            path = argv[i];
+        }
+    }
+
+    if (!path || isError) {
+        fprintf(stderr, "bmp2img [-t WxH]\n");
+        fprintf(stderr, "        /path/to/image.bmp\n");
         return -1;
     }
+
     char imgName[1024];
-    char* cp = strrchr(argv[1], '/');
+    char* cp = strrchr(path, '/');
     if (cp) {
         strcpy(imgName, cp + 1);
     } else {
@@ -31,13 +75,13 @@ int main(int argc, char* argv[])
         if (cp) {
             strcpy(imgName, cp + 1);
         } else {
-            strcpy(imgName, argv[1]);
+            strcpy(imgName, path);
         }
     }
     cp = strchr(imgName, '.');
     if (cp) *cp = 0;
 
-    FILE* fp = fopen(argv[1], "rb");
+    FILE* fp = fopen(path, "rb");
     if (!fp) {
         fprintf(stderr, "file open error\n");
         return -1;
@@ -76,8 +120,18 @@ int main(int argc, char* argv[])
         free(bmp);
         return -1;
     }
+    if (tW && head.width % tW) {
+        fprintf(stderr, "invalid width (not divisible by tile width)\n");
+        free(bmp);
+        return -1;
+    }
     if (240 < head.height) {
         fprintf(stderr, "invalid file format (height 240+)\n");
+        free(bmp);
+        return -1;
+    }
+    if (tH && head.height % tH) {
+        fprintf(stderr, "invalid height (not divisible by tile height)\n");
         free(bmp);
         return -1;
     }
@@ -107,6 +161,21 @@ int main(int argc, char* argv[])
         }
     }
     free(bmp);
+    if (tW && tH) {
+        unsigned short* imgTmp = (unsigned short*)malloc(imgSize);
+        int cur = 0;
+        for (int y = 0; y < head.height; y+= tH) {
+            for (int x = 0; x < head.width; x+= tW) {
+                for (int yy = 0; yy < tH; yy++) {
+                    for (int xx = 0; xx < tW; xx++) {
+                        imgTmp[cur++] = img[(y + yy) * head.width + x + xx];
+                    }
+                }
+            }
+        }
+        free(img);
+        img = imgTmp;
+    }
 
     imgSize /= 2;
     printf("const unsigned short rom_%s[%d] = {\n", imgName, imgSize);
