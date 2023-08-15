@@ -45,6 +45,20 @@
 
 TODO: あとで書く
 
+## How to Build
+
+### Required Middleware
+
+- [PlatformIO Core](https://github.com/platformio/platformio-core)
+- GNU Make
+- CLANG (C++)
+
+### How to Build
+
+```
+make
+```
+
 ## License
 
 本プログラムのライセンスは [GPLv3](LICENSE.txt) とします。
