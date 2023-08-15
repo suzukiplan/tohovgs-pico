@@ -9,9 +9,7 @@
 
 #define BGCOLOR 0x1148
 
-static TFT_eSPI gfx(240, 320);
-
-static void printSmallFont(int x, int y, const char* format, ...)
+static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
 {
     char buf[64];
     va_list args;
@@ -20,22 +18,23 @@ static void printSmallFont(int x, int y, const char* format, ...)
     va_end(args);
     for (int i = 0; buf[i] && i < 64; i++, x += 4) {
         if ('0' <= buf[i] && buf[i] <= '9') {
-            gfx.pushImage(x, y, 4, 8, &rom_small_font[(buf[i] - '0') * 32]);
+            gfx->pushImage(x, y, 4, 8, &rom_small_font[(buf[i] - '0') * 32]);
         } else if ('A' <= buf[i] && buf[i] <= 'Z') {
-            gfx.pushImage(x, y, 4, 8, &rom_small_font[320 + (buf[i] - 'A') * 32]);
+            gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + (buf[i] - 'A') * 32]);
         } else if (' ' == buf[i]) {
-            gfx.fillRect(x, y, 4, 8, BGCOLOR);
+            gfx->fillRect(x, y, 4, 8, BGCOLOR);
         } else if ('.' == buf[i]) {
-            gfx.pushImage(x, y, 4, 8, &rom_small_font[320 + 832]);
+            gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + 832]);
         } else if (':' == buf[i]) {
-            gfx.pushImage(x, y, 4, 8, &rom_small_font[320 + 832 + 32]);
+            gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + 832 + 32]);
         }
     }
 }
 
-class KeyboardRenderer
+class Keyboard
 {
   private:
+    TFT_eSPI* gfx;
     struct Position {
         int x;
         int y;
@@ -44,12 +43,12 @@ class KeyboardRenderer
 
     void render(int ch)
     {
-        gfx.fillRect(this->pos.x, this->pos.y, 200, 10, BGCOLOR);
+        this->gfx->fillRect(this->pos.x, this->pos.y, 200, 10, BGCOLOR);
         // チャネル名と楽器を描画
-        printSmallFont(this->pos.x, this->pos.y, "CH%d TRI ", ch);
+        printSmallFont(this->gfx, this->pos.x, this->pos.y, "CH%d TRI ", ch);
         // 白鍵を描画
         for (int i = 0; i < 50; i++) {
-            gfx.fillRect(this->pos.x + 32 + i * 4, this->pos.y, 3, 9, 0xFFFF);
+            this->gfx->fillRect(this->pos.x + 32 + i * 4, this->pos.y, 3, 9, 0xFFFF);
         }
         // 黒鍵を描画
         for (int i = 0; i < 49; i++) {
@@ -59,21 +58,25 @@ class KeyboardRenderer
                 case 3:
                 case 5:
                 case 6:
-                    gfx.fillRect(this->pos.x + 32 + i * 4 + 2, this->pos.y, 3, 7, 0x0000);
+                    this->gfx->fillRect(this->pos.x + 32 + i * 4 + 2, this->pos.y, 3, 7, 0x0000);
                     break;
             }
         }
     }
 
   public:
-    KeyboardRenderer(int ch, int x, int y)
+    Keyboard(TFT_eSPI* gfx, int ch, int x, int y)
     {
+        this->gfx = gfx;
         this->pos.x = x;
         this->pos.y = y;
         this->key = -1;
         render(ch);
     }
 };
+
+static TFT_eSPI gfx(240, 320);
+static Keyboard* keys[6];
 
 void setup()
 {
@@ -90,14 +93,14 @@ void setup()
     gfx.setRotation(2);
     gfx.fillScreen(BGCOLOR);
 
-    printSmallFont(4, 4, "SONG NOT SELECTED");
-    printSmallFont(4, 16, "INDEX     00000  PLAYING 0 OF 0");
-    printSmallFont(4, 24, "LEFT TIME 00:00");
+    printSmallFont(&gfx, 4, 4, "SONG NOT SELECTED");
+    printSmallFont(&gfx, 4, 16, "INDEX     00000  PLAYING 0 OF 0");
+    printSmallFont(&gfx, 4, 24, "LEFT TIME 00:00");
 
     gfx.drawLine(0, 34, 240, 34, 0x8410);
     gfx.drawLine(0, 36, 240, 36, 0xFFFF);
     for (int i = 0; i < 6; i++) {
-        KeyboardRenderer key(i, 4, 40 + i * 10);
+        keys[i] = new Keyboard(&gfx, i, 4, 40 + i * 10);
     }
     gfx.drawLine(0, 101, 240, 101, 0xFFFF);
     gfx.drawLine(0, 103, 240, 103, 0x8410);
