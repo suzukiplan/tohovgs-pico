@@ -58,6 +58,10 @@ class View
         pos.w = w;
         pos.h = h;
     }
+
+    virtual void onTouchStart(int tx, int ty);
+    virtual void onTouchMove(int tx, int ty);
+    virtual void onTouchEnd(int tx, int ty);
 };
 
 class TopBoardView : public View
@@ -77,6 +81,10 @@ class TopBoardView : public View
         init(gfx, 0, y, 240, 32);
         this->render();
     }
+
+    void onTouchStart(int tx, int ty) override {}
+    void onTouchMove(int tx, int ty) override {}
+    void onTouchEnd(int tx, int ty) override {}
 };
 
 class KeyboardView : public View
@@ -115,11 +123,16 @@ class KeyboardView : public View
         this->key = -1;
         render(ch);
     }
+
+    void onTouchStart(int tx, int ty) override {}
+    void onTouchMove(int tx, int ty) override {}
+    void onTouchEnd(int tx, int ty) override {}
 };
 
 class SeekbarView : public View
 {
   private:
+    bool movingProgress;
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
@@ -127,13 +140,6 @@ class SeekbarView : public View
         this->gfx->drawLine(0, 0, 240, 0, COLOR_GRAY);
         this->renderDuration(0);
         this->renderProgress(100, 0);
-    }
-
-  public:
-    SeekbarView(TFT_eSPI* gfx, int y)
-    {
-        init(gfx, 0, y, 240, 24);
-        render();
     }
 
     void renderDuration(int sec)
@@ -170,9 +176,50 @@ class SeekbarView : public View
             this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
         }
     }
+
+  public:
+    SeekbarView(TFT_eSPI* gfx, int y)
+    {
+        init(gfx, 0, y, 240, 24);
+        this->movingProgress = false;
+        render();
+    }
+
+    void updateProgress(int max, int progress)
+    {
+        if (progress < 0) {
+            progress = 0;
+        } else if (max <= progress) {
+            progress = max - 1;
+        }
+        gfx->startWrite();
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->renderProgress(max, progress);
+        gfx->endWrite();
+    }
+
+    void onTouchStart(int tx, int ty) override
+    {
+        if (32 <= tx && tx < 32 + 164) {
+            this->movingProgress = true;
+            this->updateProgress(164, tx - 32);
+        }
+    }
+
+    void onTouchMove(int tx, int ty) override
+    {
+        if (this->movingProgress) {
+            this->updateProgress(164, tx - 32);
+        }
+    }
+
+    void onTouchEnd(int tx, int ty) override
+    {
+        this->movingProgress = false;
+    }
 };
 
-static TFT_eSPI gfx(240, 320);
+static TFT_eSPI gfx;
 static TopBoardView* topBoard;
 static KeyboardView* keys[6];
 static SeekbarView* seekbar;
@@ -191,6 +238,15 @@ void setup()
     gfx.startWrite();
     gfx.setRotation(2);
     gfx.fillScreen(COLOR_BG);
+
+    // Touch Calibration を初期化
+    uint16_t touch[] = {
+        300,
+        3600,
+        300,
+        3600,
+        0b010};
+    gfx.setTouch(touch);
 
     // ガイドラインを描画
     gfx.drawLine(0, 34, 240, 34, COLOR_GRAY);
@@ -212,9 +268,47 @@ void setup()
 
 void loop()
 {
-    static bool touched = false;
-    static uint16_t touchX = 0;
-    static uint16_t touchY = 0;
-    touched = gfx.getTouch(&touchX, &touchY);
+    static View* touchingView = nullptr;
+    static bool prevTouched = false;
+    static uint16_t prevTouchX = 0;
+    static uint16_t prevTouchY = 0;
+    uint16_t touchX;
+    uint16_t touchY;
+    bool touched = gfx.getTouch(&touchX, &touchY, 20);
+    if (prevTouched && touched && touchingView) {
+        if (touchX != prevTouchX || touchY != prevTouchY) {
+            touchingView->onTouchMove(touchX - touchingView->pos.x, touchY - touchingView->pos.y);
+        }
+    } else if (!prevTouched && touched) {
+        if (seekbar->pos.y <= touchY) {
+            touchingView = seekbar;
+        } else {
+            touchingView = nullptr;
+        }
+        if (touchingView) {
+            touchingView->onTouchStart(touchX - touchingView->pos.x, touchY - touchingView->pos.y);
+        }
+    } else if (!touched && prevTouched && touchingView) {
+        touchingView->onTouchEnd(prevTouchX - touchingView->pos.x, prevTouchY - touchingView->pos.y);
+        touchingView = nullptr;
+    }
+    prevTouched = touched;
+    if (touched) {
+        prevTouchX = touchX;
+        prevTouchY = touchY;
+    }
     delay(20);
+
+#if 0
+    // タッチ座標を表示（あとで消す）
+    gfx.setViewport(0, 0, 240, 320);
+    gfx.startWrite();
+    printSmallFont(&gfx, 8, 118, "SCREEN W:%03d H:%03d", gfx.width(), gfx.height());
+    if (touched || prevTouched) {
+        printSmallFont(&gfx, 8, 128, "TOUCH X:%03d Y:%03d", touchX, touchY);
+    } else {
+        printSmallFont(&gfx, 8, 128, "NOT TOUCHING      ");
+    }
+    gfx.endWrite();
+#endif
 }
