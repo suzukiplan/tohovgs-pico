@@ -44,12 +44,25 @@ typedef struct Position_ {
     int h;
 } Position;
 
-class TopBoard
+class View
 {
-  private:
+  public:
     TFT_eSPI* gfx;
     Position pos;
 
+    void init(TFT_eSPI* gfx, int x, int y, int w, int h)
+    {
+        this->gfx = gfx;
+        pos.x = x;
+        pos.y = y;
+        pos.w = w;
+        pos.h = h;
+    }
+};
+
+class TopBoardView : public View
+{
+  private:
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
@@ -59,22 +72,16 @@ class TopBoard
     }
 
   public:
-    TopBoard(TFT_eSPI* gfx, int y)
+    TopBoardView(TFT_eSPI* gfx, int y)
     {
-        this->gfx = gfx;
-        this->pos.x = 0;
-        this->pos.y = y;
-        this->pos.w = 240;
-        this->pos.h = 32;
+        init(gfx, 0, y, 240, 32);
         this->render();
     }
 };
 
-class Keyboard
+class KeyboardView : public View
 {
   private:
-    TFT_eSPI* gfx;
-    Position pos;
     int key;
 
     void render(int ch)
@@ -102,24 +109,17 @@ class Keyboard
     }
 
   public:
-    Keyboard(TFT_eSPI* gfx, int ch, int x, int y)
+    KeyboardView(TFT_eSPI* gfx, int ch, int x, int y)
     {
-        this->gfx = gfx;
-        this->pos.x = x;
-        this->pos.y = y;
-        this->pos.w = 232;
-        this->pos.h = 10;
+        init(gfx, x, y, 232, 10);
         this->key = -1;
         render(ch);
     }
 };
 
-class Seekbar
+class SeekbarView : public View
 {
   private:
-    TFT_eSPI* gfx;
-    Position pos;
-
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
@@ -130,13 +130,9 @@ class Seekbar
     }
 
   public:
-    Seekbar(TFT_eSPI* gfx, int y)
+    SeekbarView(TFT_eSPI* gfx, int y)
     {
-        this->gfx = gfx;
-        this->pos.x = 0;
-        this->pos.y = y;
-        this->pos.w = 240;
-        this->pos.h = 24;
+        init(gfx, 0, y, 240, 24);
         render();
     }
 
@@ -177,9 +173,9 @@ class Seekbar
 };
 
 static TFT_eSPI gfx(240, 320);
-static TopBoard* topBoard;
-static Keyboard* keys[6];
-static Seekbar* seekbar;
+static TopBoardView* topBoard;
+static KeyboardView* keys[6];
+static SeekbarView* seekbar;
 
 void setup()
 {
@@ -203,19 +199,22 @@ void setup()
     gfx.drawLine(0, 103, 240, 103, COLOR_GRAY);
 
     // Viewを初期化
-    topBoard = new TopBoard(&gfx, 0);
+    topBoard = new TopBoardView(&gfx, 0);
     for (int i = 0; i < 6; i++) {
-        keys[i] = new Keyboard(&gfx, i, 4, 40 + i * 10);
+        keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
     }
-    seekbar = new Seekbar(&gfx, 320 - 24);
+    seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
+
+    digitalWrite(25, LOW);
 }
 
 void loop()
 {
-    delay(1000);
-    digitalWrite(25, LOW);
-    delay(1000);
-    digitalWrite(25, HIGH);
+    static bool touched = false;
+    static uint16_t touchX = 0;
+    static uint16_t touchY = 0;
+    touched = gfx.getTouch(&touchX, &touchY);
+    delay(20);
 }
