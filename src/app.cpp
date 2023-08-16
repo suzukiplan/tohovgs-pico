@@ -44,6 +44,31 @@ typedef struct Position_ {
     int h;
 } Position;
 
+class TopBoard
+{
+  private:
+    TFT_eSPI* gfx;
+    Position pos;
+
+    void render()
+    {
+        printSmallFont(this->gfx, this->pos.x + 4, this->pos.y + 4, "SONG NOT SELECTED");
+        printSmallFont(this->gfx, this->pos.x + 4, this->pos.y + 16, "INDEX     00000  PLAYING 0 OF 0");
+        printSmallFont(this->gfx, this->pos.x + 4, this->pos.y + 24, "LEFT TIME 00:00");
+    }
+
+  public:
+    TopBoard(TFT_eSPI* gfx, int y)
+    {
+        this->gfx = gfx;
+        this->pos.x = 0;
+        this->pos.y = y;
+        this->pos.w = 240;
+        this->pos.h = 32;
+        this->render();
+    }
+};
+
 class Keyboard
 {
   private:
@@ -149,6 +174,7 @@ class Seekbar
 };
 
 static TFT_eSPI gfx(240, 320);
+static TopBoard* topBoard;
 static Keyboard* keys[6];
 static Seekbar* seekbar;
 
@@ -167,18 +193,19 @@ void setup()
     gfx.setRotation(2);
     gfx.fillScreen(COLOR_BG);
 
-    printSmallFont(&gfx, 4, 4, "SONG NOT SELECTED");
-    printSmallFont(&gfx, 4, 16, "INDEX     00000  PLAYING 0 OF 0");
-    printSmallFont(&gfx, 4, 24, "LEFT TIME 00:00");
-
+    // ガイドラインを描画
     gfx.drawLine(0, 34, 240, 34, COLOR_GRAY);
     gfx.drawLine(0, 36, 240, 36, COLOR_WHITE);
+    gfx.drawLine(0, 101, 240, 101, COLOR_WHITE);
+    gfx.drawLine(0, 103, 240, 103, COLOR_GRAY);
+
+    // Viewを初期化
+    topBoard = new TopBoard(&gfx, 0);
     for (int i = 0; i < 6; i++) {
         keys[i] = new Keyboard(&gfx, i, 4, 40 + i * 10);
     }
-    gfx.drawLine(0, 101, 240, 101, COLOR_WHITE);
-    gfx.drawLine(0, 103, 240, 103, COLOR_GRAY);
     seekbar = new Seekbar(&gfx, 320 - 24);
+
     gfx.endWrite();
 }
 
