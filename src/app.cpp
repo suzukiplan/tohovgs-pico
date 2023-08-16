@@ -152,7 +152,7 @@ class Seekbar
         progress *= 164;
         progress /= 100;
         if (160 < progress) progress = 160;
-        this->gfx->fillRect(32 + progress, this->pos.y + 3, 4, this->pos.h - 6, COLOR_WHITE);
+        this->gfx->fillRect(32 + progress, 3, 4, this->pos.h - 6, COLOR_WHITE);
         if (progress < 160) {
             p.x = 32 + progress + 4;
             p.y = (this->pos.h - 2) / 2;
@@ -160,7 +160,7 @@ class Seekbar
             p.h = 1;
             this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
             this->gfx->fillRect(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
-            this->gfx->fillRect(p.x, pos.y + 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->fillRect(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
             this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
         }
         if (0 < progress) {
@@ -170,7 +170,7 @@ class Seekbar
             p.h = 1;
             this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
             this->gfx->fillRect(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
-            this->gfx->fillRect(p.x, pos.y + 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->fillRect(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
             this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
         }
     }
