@@ -52,9 +52,10 @@ class TopBoard
 
     void render()
     {
-        printSmallFont(this->gfx, this->pos.x + 4, this->pos.y + 4, "SONG NOT SELECTED");
-        printSmallFont(this->gfx, this->pos.x + 4, this->pos.y + 16, "INDEX     00000  PLAYING 0 OF 0");
-        printSmallFont(this->gfx, this->pos.x + 4, this->pos.y + 24, "LEFT TIME 00:00");
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        printSmallFont(this->gfx, 4, 4, "SONG NOT SELECTED");
+        printSmallFont(this->gfx, 4, 16, "INDEX     00000  PLAYING 0 OF 0");
+        printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
     }
 
   public:
@@ -78,12 +79,13 @@ class Keyboard
 
     void render(int ch)
     {
-        this->gfx->fillRect(this->pos.x, this->pos.y, this->pos.w, this->pos.h, COLOR_BG);
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->gfx->fillRect(0, 0, this->pos.w, this->pos.h, COLOR_BG);
         // チャネル名と楽器を描画
-        printSmallFont(this->gfx, this->pos.x, this->pos.y, "CH%d TRI ", ch);
+        printSmallFont(this->gfx, 0, 0, "CH%d TRI ", ch);
         // 白鍵を描画
         for (int i = 0; i < 50; i++) {
-            this->gfx->fillRect(this->pos.x + 32 + i * 4, this->pos.y, 3, 9, COLOR_WHITE);
+            this->gfx->fillRect(32 + i * 4, 0, 3, 9, COLOR_WHITE);
         }
         // 黒鍵を描画
         for (int i = 0; i < 49; i++) {
@@ -93,7 +95,7 @@ class Keyboard
                 case 3:
                 case 5:
                 case 6:
-                    this->gfx->fillRect(this->pos.x + 32 + i * 4 + 2, this->pos.y, 3, 7, COLOR_BLACK);
+                    this->gfx->fillRect(32 + i * 4 + 2, 0, 3, 7, COLOR_BLACK);
                     break;
             }
         }
@@ -120,8 +122,9 @@ class Seekbar
 
     void render()
     {
-        this->gfx->drawLine(204, this->pos.y, 204, this->pos.y + this->pos.h, COLOR_GRAY);
-        this->gfx->drawLine(0, this->pos.y, 240, this->pos.y, COLOR_GRAY);
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->gfx->drawLine(204, 0, 204, this->pos.h, COLOR_GRAY);
+        this->gfx->drawLine(0, 0, 240, 0, COLOR_GRAY);
         this->renderDuration(0);
         this->renderProgress(100, 0);
     }
@@ -139,7 +142,7 @@ class Seekbar
 
     void renderDuration(int sec)
     {
-        printSmallFont(this->gfx, 4, this->pos.y + (this->pos.h - 8) / 2 + 1, "%02d:%02d", sec / 60, sec % 60);
+        printSmallFont(this->gfx, 4, (this->pos.h - 8) / 2 + 1, "%02d:%02d", sec / 60, sec % 60);
     }
 
     void renderProgress(int max, int progress)
@@ -152,7 +155,7 @@ class Seekbar
         this->gfx->fillRect(32 + progress, this->pos.y + 3, 4, this->pos.h - 6, COLOR_WHITE);
         if (progress < 160) {
             p.x = 32 + progress + 4;
-            p.y = this->pos.y + (this->pos.h - 2) / 2;
+            p.y = (this->pos.h - 2) / 2;
             p.w = 160 - progress;
             p.h = 1;
             this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
@@ -162,7 +165,7 @@ class Seekbar
         }
         if (0 < progress) {
             p.x = 32;
-            p.y = this->pos.y + (this->pos.h - 2) / 2;
+            p.y = (this->pos.h - 2) / 2;
             p.w = progress;
             p.h = 1;
             this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
