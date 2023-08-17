@@ -3,3 +3,5 @@ src/rom_*.c
 include/roms.hpp
 .vscode
 .DS_Store
+rom/songlist_sjis.dat
+rom/songlist_utf8.dat
