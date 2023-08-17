@@ -9,8 +9,9 @@
 typedef struct Song_ {
     int bgmSize;            // size of bgm (0 = no data)
     int bgmHead;            // &rom_bgm[bgmHead]
+    int no;                 // number of song
     char loop;              // loop flag
-    char reserved[7];       // padding
+    char reserved[3];       // padding
     char name[64];          // song name (SJIS)
 } Song;
 
@@ -19,7 +20,7 @@ typedef struct Album_ {
     char copyright[32];     // copyright (SJIS)
     unsigned short color;   // color code (RGB565)
     short reserved;         // padding
-    struct Song[32] songs;  // song records (max 32 songs per album)
+    Song songs[32];  // song records (max 32 songs per album)
 } Album;
 
 #endif
