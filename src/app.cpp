@@ -3,10 +3,12 @@
  * License under GPLv3: https://github.com/suzukiplan/tohovgs-pico/blob/master/LICENSE.txt
  */
 
+#include "model.h"
 #include "roms.hpp"
 #include <SPI.h>
 #include <TFT_eSPI.h>
 
+#define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_BG_DARK 0b0000100010100100
 #define COLOR_BG_LIGHT 0b0010001010010000
@@ -222,6 +224,8 @@ class SeekbarView : public View
 class SongListView : public View
 {
   private:
+    Album* album;
+
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
@@ -237,8 +241,9 @@ class SongListView : public View
     }
 
   public:
-    SongListView(TFT_eSPI* gfx, int y, int h)
+    SongListView(TFT_eSPI* gfx, Album* album, int y, int h)
     {
+        this->album = album;
         init(gfx, 0, y, 240, h);
         this->render();
     }
@@ -253,6 +258,7 @@ static TopBoardView* topBoard;
 static KeyboardView* keys[6];
 static SongListView* songList;
 static SeekbarView* seekbar;
+static Album* albums = (Album*)rom_songlist;
 
 void setup()
 {
@@ -289,7 +295,7 @@ void setup()
     for (int i = 0; i < 6; i++) {
         keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
     }
-    songList = new SongListView(&gfx, 104, 320 - 104 - 24);
+    songList = new SongListView(&gfx, &albums[0], 104, 320 - 104 - 24);
     seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
