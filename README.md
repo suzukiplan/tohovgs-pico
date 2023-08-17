@@ -63,10 +63,13 @@ make
 
 本プログラムのライセンスは [GPLv3](LICENSE.txt) とします。
 
-また、本プログラムでは以下の Open Source Software を利用しています。
+また、本プログラムでは以下の Open Source Software や素材を利用しています。
 
 - TFT eSPI
-    - Web Site: [https://github.com/Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI)
-    - License: [Combined Licenses](./licenses-copy/TFT_eSPI.txt)
-    - `Copyright (c) 2012 Adafruit Industries.  All rights reserved.`
-    - `Copyright (c) 2023 Bodmer (https://github.com/Bodmer)`
+  - Web Site: [https://github.com/Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI)
+  - License: [Combined Licenses](./licenses-copy/TFT_eSPI.txt)
+  - `Copyright (c) 2012 Adafruit Industries.  All rights reserved.`
+  - `Copyright (c) 2023 Bodmer (https://github.com/Bodmer)`
+- 8×12 ドット日本語フォント「k8x12」
+  - Web Site: [https://littlelimit.net/k8x12.htm](https://littlelimit.net/k8x12.htm)
+  - License: [Original](./licenses-copy/k8x12.txt)

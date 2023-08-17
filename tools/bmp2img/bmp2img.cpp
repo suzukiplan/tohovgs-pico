@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     int tH = 0;
     char* path = nullptr;
     bool isError = false;
+    bool isMisaki = false;
 
     for (int i = 1; !isError && i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -49,6 +50,9 @@ int main(int argc, char* argv[])
                             }
                         }
                     }
+                    break;
+                case 'm':
+                    isMisaki = true;
                     break;
                 default:
                     fprintf(stderr, "unknown option: %s\n", argv[i]);
@@ -115,18 +119,8 @@ int main(int argc, char* argv[])
         free(bmp);
         return -1;
     }
-    if (320 < head.width) {
-        fprintf(stderr, "invalid file format (width 320+)\n");
-        free(bmp);
-        return -1;
-    }
     if (tW && head.width % tW) {
         fprintf(stderr, "invalid width (not divisible by tile width)\n");
-        free(bmp);
-        return -1;
-    }
-    if (240 < head.height) {
-        fprintf(stderr, "invalid file format (height 240+)\n");
         free(bmp);
         return -1;
     }
@@ -176,28 +170,68 @@ int main(int argc, char* argv[])
         free(img);
         img = imgTmp;
     }
-
-    imgSize /= 2;
-    printf("const unsigned short rom_%s[%d] = {\n", imgName, imgSize);
-    bool firstLine = true;
-    unsigned char* cptr = (unsigned char*)img;
-    int left = imgSize;
-    for (int i = 0; i < imgSize; i += 16, left -= 16) {
-        if (firstLine) {
-            firstLine = false;
-        } else {
-            printf(",\n");
-        }
-        printf("    ");
-        for (int j = 0; j < (left < 16 ? left : 16); j++) {
-            if (j) {
-                printf(", 0x%04X", img[i + j]);
-            } else {
-                printf("0x%04X", img[i + j]);
+    if (isMisaki) {
+        int num = head.width / tW * head.height / tH;
+        imgSize = num * 12;
+        unsigned char* imgTmp = (unsigned char*)malloc(imgSize);
+        int imgIdx = 0;
+        int tmpIdx = 0;
+        for (int i = 0; i < num; i++) {
+            for (int y = 0; y < tH; y++) {
+                unsigned char bit = 0;
+                for (int x = 0; x < tW; x++) {
+                    bit <<= 1;
+                    bit |= img[imgIdx++] ? 0 : 1;
+                }
+                if (4 == tW) {
+                    bit <<= 4; // 半角は左詰めにする
+                }
+                imgTmp[tmpIdx++] = bit;
             }
         }
+        printf("const unsigned char rom_%s[%d] = {\n", imgName, imgSize);
+        bool firstLine = true;
+        unsigned char* cptr = (unsigned char*)img;
+        int left = imgSize;
+        for (int i = 0; i < imgSize; i += 32, left -= 32) {
+            if (firstLine) {
+                firstLine = false;
+            } else {
+                printf(",\n");
+            }
+            printf("    ");
+            for (int j = 0; j < (left < 32 ? left : 32); j++) {
+                if (j) {
+                    printf(", 0x%02X", imgTmp[i + j]);
+                } else {
+                    printf("0x%02X", imgTmp[i + j]);
+                }
+            }
+        }
+        printf("\n};\n");
+    } else {
+        imgSize /= 2;
+        printf("const unsigned short rom_%s[%d] = {\n", imgName, imgSize);
+        bool firstLine = true;
+        unsigned char* cptr = (unsigned char*)img;
+        int left = imgSize;
+        for (int i = 0; i < imgSize; i += 16, left -= 16) {
+            if (firstLine) {
+                firstLine = false;
+            } else {
+                printf(",\n");
+            }
+            printf("    ");
+            for (int j = 0; j < (left < 16 ? left : 16); j++) {
+                if (j) {
+                    printf(", 0x%04X", img[i + j]);
+                } else {
+                    printf("0x%04X", img[i + j]);
+                }
+            }
+        }
+        printf("\n};\n");
     }
-    printf("\n};\n");
     free(img);
     return 0;
 }
