@@ -177,14 +177,6 @@ class SeekbarView : public View
         }
     }
 
-  public:
-    SeekbarView(TFT_eSPI* gfx, int y)
-    {
-        init(gfx, 0, y, 240, 24);
-        this->movingProgress = false;
-        render();
-    }
-
     void updateProgress(int max, int progress)
     {
         if (progress < 0) {
@@ -196,6 +188,14 @@ class SeekbarView : public View
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->renderProgress(max, progress);
         gfx->endWrite();
+    }
+
+  public:
+    SeekbarView(TFT_eSPI* gfx, int y)
+    {
+        init(gfx, 0, y, 240, 24);
+        this->movingProgress = false;
+        render();
     }
 
     void onTouchStart(int tx, int ty) override
@@ -219,9 +219,39 @@ class SeekbarView : public View
     }
 };
 
+class SongListView : public View
+{
+  private:
+    void render()
+    {
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        for (int i = 0; i < 32; i++) {
+            int y = 6 + i * 26;
+            if (pos.h <= y) break;
+            gfx->fillRect(6, y, pos.w - 12, 20, COLOR_BG);
+            gfx->drawFastVLine(6, y, 20, COLOR_GRAY);
+            gfx->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
+            gfx->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
+            gfx->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
+        }
+    }
+
+  public:
+    SongListView(TFT_eSPI* gfx, int y, int h)
+    {
+        init(gfx, 0, y, 240, h);
+        this->render();
+    }
+
+    void onTouchStart(int tx, int ty) override {}
+    void onTouchMove(int tx, int ty) override {}
+    void onTouchEnd(int tx, int ty) override {}
+};
+
 static TFT_eSPI gfx;
 static TopBoardView* topBoard;
 static KeyboardView* keys[6];
+static SongListView* songList;
 static SeekbarView* seekbar;
 
 void setup()
@@ -259,15 +289,17 @@ void setup()
     for (int i = 0; i < 6; i++) {
         keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
     }
+    songList = new SongListView(&gfx, 104, 320 - 104 - 24);
     seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
-
+    delay(500);
     digitalWrite(25, LOW);
 }
 
 void loop()
 {
+    // タッチイベントを対象Viewへ配送
     static View* touchingView = nullptr;
     static bool prevTouched = false;
     static uint16_t prevTouchX = 0;
