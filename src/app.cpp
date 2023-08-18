@@ -39,6 +39,75 @@ static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
     }
 }
 
+static inline unsigned short sjis2jis(const unsigned char* sjis)
+{
+    unsigned char jis[2];
+    unsigned short ret;
+    jis[0] = sjis[0];
+    jis[1] = sjis[1];
+    if (jis[0] <= 0x9f) {
+        jis[0] -= 0x71;
+    } else {
+        jis[0] -= 0xb1;
+    }
+    jis[0] *= 2;
+    jis[0]++;
+    if (jis[1] >= 0x7F) {
+        jis[1] -= 0x01;
+    }
+    if (jis[1] >= 0x9e) {
+        jis[1] -= 0x7d;
+        jis[0]++;
+    } else {
+        jis[1] -= 0x1f;
+    }
+    ret = (jis[0] - 0x21) * 94;
+    ret += jis[1] - 0x21;
+    return ret;
+}
+
+static void printKanji(TFT_eSPI* gfx, int x, int y, const char* format, ...)
+{
+    static unsigned char bit[8] = {
+        0b10000000,
+        0b01000000,
+        0b00100000,
+        0b00010000,
+        0b00001000,
+        0b00000100,
+        0b00000010,
+        0b00000001};
+    char buf[64];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buf, sizeof(buf), format, args);
+    va_end(args);
+    int w = 0;
+    for (int i = 0; buf[i] && i < 64; i += w / 4, x += w) {
+        if (buf[i] & 0x80) {
+            w = 8;
+            int jis = sjis2jis((const unsigned char*)&buf[i]) * 12;
+            for (int yy = 0; yy < 12; yy++) {
+                for (int xx = 0; xx < 8; xx++) {
+                    if (rom_k8x12S_jisx0208[jis + yy] & bit[xx]) {
+                        gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+                    }
+                }
+            }
+        } else {
+            w = 4;
+            int jis = buf[i] * 12;
+            for (int yy = 0; yy < 12; yy++) {
+                for (int xx = 0; xx < 4; xx++) {
+                    if (rom_k8x12S_jisx0201[jis + yy] & bit[xx]) {
+                        gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+                    }
+                }
+            }
+        }
+    }
+}
+
 typedef struct Position_ {
     int x;
     int y;
@@ -225,18 +294,35 @@ class SongListView : public View
 {
   private:
     Album* album;
+    int scroll;
 
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        int y = this->scroll;
+        y += 8;
+        if (-12 < y) {
+            printKanji(gfx, 4, y, "%s", album->name);
+        }
+        y += 16;
+        if (-12 < y) {
+            printKanji(gfx, pos.w - strlen(album->copyright) * 4 - 4, y, "%s", album->copyright);
+        }
+        y += 24;
         for (int i = 0; i < 32; i++) {
-            int y = 6 + i * 26;
-            if (pos.h <= y) break;
-            gfx->fillRect(6, y, pos.w - 12, 20, COLOR_BG);
+            if (y < -22) {
+                y += 22;
+                continue;
+            } else if (pos.h <= y) {
+                break;
+            }
+            gfx->fillRect(6, y, pos.w - 12, 20, album->color);
             gfx->drawFastVLine(6, y, 20, COLOR_GRAY);
             gfx->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
             gfx->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
             gfx->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
+            printKanji(gfx, 10, y + 4, "%s", album->songs[i].name);
+            y += 22;
         }
     }
 
@@ -244,6 +330,7 @@ class SongListView : public View
     SongListView(TFT_eSPI* gfx, Album* album, int y, int h)
     {
         this->album = album;
+        this->scroll = 0;
         init(gfx, 0, y, 240, h);
         this->render();
     }
