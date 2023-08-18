@@ -389,7 +389,7 @@ void setup()
     for (int i = 0; i < 6; i++) {
         keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
     }
-    songList = new SongListView(&gfx, &albums[0], 104, 320 - 104 - 24);
+    songList = new SongListView(&gfx, &albums[0], 105, 190);
     seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
