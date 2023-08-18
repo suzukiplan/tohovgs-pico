@@ -10,6 +10,7 @@
 
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
+#define COLOR_LIST_BG 0b0000100010100100
 #define COLOR_BG_DARK 0b0000100010100100
 #define COLOR_BG_LIGHT 0b0010001010010000
 #define COLOR_BLACK 0x0000
@@ -294,19 +295,21 @@ class SongListView : public View
 {
   private:
     Album* album;
+    TFT_eSprite* sprite;
     int scroll;
 
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->sprite->fillScreen(COLOR_LIST_BG);
         int y = this->scroll;
         y += 8;
         if (-12 < y) {
-            printKanji(gfx, 4, y, "%s", album->name);
+            printKanji(this->sprite, 4, y, "%s", album->name);
         }
         y += 16;
         if (-12 < y) {
-            printKanji(gfx, pos.w - strlen(album->copyright) * 4 - 4, y, "%s", album->copyright);
+            printKanji(this->sprite, pos.w - strlen(album->copyright) * 4 - 4, y, "%s", album->copyright);
         }
         y += 24;
         for (int i = 0; i < 32; i++) {
@@ -316,14 +319,15 @@ class SongListView : public View
             } else if (pos.h <= y) {
                 break;
             }
-            gfx->fillRect(6, y, pos.w - 12, 20, album->color);
-            gfx->drawFastVLine(6, y, 20, COLOR_GRAY);
-            gfx->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
-            gfx->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
-            gfx->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
-            printKanji(gfx, 10, y + 4, "%s", album->songs[i].name);
+            this->sprite->fillRect(6, y, pos.w - 12, 20, album->color);
+            this->sprite->drawFastVLine(6, y, 20, COLOR_GRAY);
+            this->sprite->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
+            this->sprite->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
+            this->sprite->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
+            printKanji(this->sprite, 10, y + 4, "%s", album->songs[i].name);
             y += 22;
         }
+        this->sprite->pushSprite(0, 0);
     }
 
   public:
@@ -332,6 +336,9 @@ class SongListView : public View
         this->album = album;
         this->scroll = 0;
         init(gfx, 0, y, 240, h);
+        this->sprite = new TFT_eSprite(gfx);
+        this->sprite->createSprite(pos.w, pos.h);
+        this->sprite->setColorDepth(16);
         this->render();
     }
 
