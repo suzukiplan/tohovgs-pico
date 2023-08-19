@@ -9,8 +9,10 @@ all: roms
 build: roms
 	pio run
 
-roms: tools/bmp2img/bmp2img tools/varext/varext tools/bin2var/bin2var
+roms: tools/bmp2img/bmp2img tools/varext/varext tools/bin2var/bin2var tools/sldmak/sldmak
 	make rom/songlist_utf8.dat
+	tools/sldmak/sldmak rom/songlist_utf8.dat >BGM.mak
+	make -f BGM.mak all
 	make rom/songlist_sjis.dat
 	make rom/songlist.bin
 	make include/roms.hpp
