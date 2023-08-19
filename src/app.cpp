@@ -298,10 +298,19 @@ class SongListView : public View
     TFT_eSprite* sprite;
     int scroll;
     int scrollTarget;
+    int scrollBottom;
+    int contentHeight;
     int tx, ty;
     int prevY;
     int lastMoveY;
     int flingY;
+
+    inline void transferSprite()
+    {
+        this->gfx->startWrite();
+        this->sprite->pushSprite(0, 0);
+        this->gfx->endWrite();
+    }
 
     void render()
     {
@@ -328,7 +337,13 @@ class SongListView : public View
                     y += 22;
                     continue;
                 } else if (pos.h <= y) {
-                    break;
+                    if (0 < this->contentHeight) {
+                        this->transferSprite();
+                        return;
+                    } else {
+                        y += 22;
+                        continue;
+                    }
                 }
                 this->sprite->fillRect(6, y, pos.w - 12, 20, album->color);
                 this->sprite->drawFastVLine(6, y, 20, COLOR_GRAY);
@@ -339,9 +354,41 @@ class SongListView : public View
                 y += 22;
             }
         }
-        this->gfx->startWrite();
-        this->sprite->pushSprite(0, 0);
-        this->gfx->endWrite();
+        y += 4;
+        if (y < pos.h) {
+            printKanji(this->sprite, 4, y, "Composed by ZUN.");
+        } else if (this->contentHeight) {
+            this->transferSprite();
+            return;
+        }
+        y += 16;
+        if (y < pos.h) {
+            printKanji(this->sprite, 8, y, "This app is an alternative fiction of the Touhou Project.");
+        } else if (this->contentHeight) {
+            this->transferSprite();
+            return;
+        }
+        y += 16;
+        if (y < pos.h) {
+            printKanji(this->sprite, 140, y, "Arranged by Yoji Suzuki.");
+        } else if (this->contentHeight) {
+            this->transferSprite();
+            return;
+        }
+        y += 14;
+        if (y < pos.h) {
+            printKanji(this->sprite, 100, y, "(C)2013, Presented by SUZUKI PLAN.");
+        } else if (this->contentHeight) {
+            this->transferSprite();
+            return;
+        }
+
+        if (0 == this->contentHeight) {
+            y += 20;
+            this->contentHeight = y;
+            this->scrollBottom = (pos.h - this->contentHeight) * 128;
+        }
+        this->transferSprite();
     }
 
   public:
@@ -350,9 +397,11 @@ class SongListView : public View
         this->album = album;
         this->scroll = 0;
         this->scrollTarget = 0;
+        this->scrollBottom = 0;
         this->prevY = INT_MAX;
         this->lastMoveY = 0;
         this->flingY = 0;
+        this->contentHeight = 0;
         init(gfx, 0, y, 240, h);
         this->sprite = new TFT_eSprite(gfx);
         this->sprite->createSprite(pos.w, pos.h);
@@ -362,8 +411,12 @@ class SongListView : public View
 
     void correctOverscroll()
     {
-        if (0 == this->flingY && 0 < this->scrollTarget) {
-            this->scrollTarget = 0;
+        if (0 == this->flingY) {
+            if (0 < this->scrollTarget || this->contentHeight < pos.h) {
+                this->scrollTarget = 0;
+            } else if (this->scrollTarget < this->scrollBottom) {
+                this->scrollTarget = this->scrollBottom;
+            }
         }
     }
 
