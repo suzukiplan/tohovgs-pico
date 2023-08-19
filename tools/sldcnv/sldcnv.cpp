@@ -1,7 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include "../../include/model.h"
+
+int get_bgm_size(std::string mml)
+{
+    std::string path = "./rom/" + mml + ".bgm";
+    FILE* fp = fopen(path.c_str(), "rb");
+    if (!fp) return 0;
+    fseek(fp, 0, SEEK_END);
+    int result = (int)ftell(fp);
+    fclose(fp);
+    return result;
+}
 
 int main(int argc, char* argv[])
 {
@@ -24,6 +36,7 @@ int main(int argc, char* argv[])
     char buf[1024];
     Album album;
     int songs = 0;
+    int head = 0;
     while (fgets(buf, sizeof(buf), fpR)) {
         char* cp = strchr(buf, '\r');
         if (cp) {
@@ -56,9 +69,9 @@ int main(int argc, char* argv[])
             strncpy(album.songs[songs].name, &buf[7], sizeof(album.songs[songs].name) - 1);
         } else if (0 == strncmp(buf, "\tmml: ", 6)) {
             album.songs[songs].no = atoi(strchr(buf, '-') + 1);
-            // TODO: MMLをコンパイルして適切なBGMデータ位置とサイズをセットする
-            album.songs[songs].bgmSize = 1;
-            album.songs[songs].bgmHead = 1;
+            album.songs[songs].bgmSize = get_bgm_size(&buf[6]);
+            album.songs[songs].bgmHead = head;
+            head += album.songs[songs].bgmSize;
         } else if (0 == strncmp(buf, "\tloop: ", 7)) {
             album.songs[songs].loop = atoi(&buf[7]);
             songs++;
