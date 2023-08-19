@@ -6,5 +6,6 @@ include/roms.hpp
 rom/songlist_sjis.dat
 rom/songlist_utf8.dat
 rom/songlist.bin
+rom/bgm.dat
 BGM.mak
 rom/*.BGM

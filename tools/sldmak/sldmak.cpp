@@ -38,17 +38,27 @@ int main(int argc, char* argv[])
     }
 
     const char* compiler = "tools/vgsmml/vgsmml";
-    printf("all: %s", compiler);
+    printf("BGM_FILES =");
     for (auto bgm : mml) {
         printf(" rom/%s.bgm", bgm.c_str());
     }
-    printf("\n");
+    printf("\n\n");
+
+    printf("all: %s ${BGM_FILES} rom/bgm.dat", compiler);
     for (auto bgm : mml) {
         std::string dist = "rom/" + bgm + ".bgm";
         std::string src = "mml/" + bgm + ".mml";
         printf("\n%s: %s\n", dist.c_str(), src.c_str());
         printf("\t%s %s %s\n", compiler, src.c_str(), dist.c_str());
     }
+    printf("\n");
+
+    printf("rom/bgm.dat: ${BGM_FILES}\n");
+    printf("\trm -f rom/bgm.dat\n");
+    for (auto bgm : mml) {
+        printf("\tcat rom/%s.bgm >>rom/bgm.dat\n", bgm.c_str());
+    }
+    printf("\n");
 
     return 0;
 }
