@@ -297,12 +297,20 @@ class SongListView : public View
     Album* album;
     TFT_eSprite* sprite;
     int scroll;
+    int scrollTarget;
+    int tx, ty;
+    int prevY;
 
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        int y = this->scroll / 128;
+        if (this->prevY == y) {
+            return;
+        } else {
+            this->prevY = y;
+        }
         this->sprite->fillScreen(COLOR_LIST_BG);
-        int y = this->scroll;
         y += 8;
         if (-12 < y) {
             printKanji(this->sprite, 4, y, "%s", album->name);
@@ -313,21 +321,25 @@ class SongListView : public View
         }
         y += 24;
         for (int i = 0; i < 32; i++) {
-            if (y < -22) {
+            if (album->songs[i].name[0]) {
+                if (y < -22) {
+                    y += 22;
+                    continue;
+                } else if (pos.h <= y) {
+                    break;
+                }
+                this->sprite->fillRect(6, y, pos.w - 12, 20, album->color);
+                this->sprite->drawFastVLine(6, y, 20, COLOR_GRAY);
+                this->sprite->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
+                this->sprite->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
+                this->sprite->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
+                printKanji(this->sprite, 10, y + 4, "%s", album->songs[i].name);
                 y += 22;
-                continue;
-            } else if (pos.h <= y) {
-                break;
             }
-            this->sprite->fillRect(6, y, pos.w - 12, 20, album->color);
-            this->sprite->drawFastVLine(6, y, 20, COLOR_GRAY);
-            this->sprite->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
-            this->sprite->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
-            this->sprite->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
-            printKanji(this->sprite, 10, y + 4, "%s", album->songs[i].name);
-            y += 22;
         }
+        this->gfx->startWrite();
         this->sprite->pushSprite(0, 0);
+        this->gfx->endWrite();
     }
 
   public:
@@ -335,6 +347,8 @@ class SongListView : public View
     {
         this->album = album;
         this->scroll = 0;
+        this->scrollTarget = 0;
+        this->prevY = INT_MAX;
         init(gfx, 0, y, 240, h);
         this->sprite = new TFT_eSprite(gfx);
         this->sprite->createSprite(pos.w, pos.h);
@@ -342,9 +356,41 @@ class SongListView : public View
         this->render();
     }
 
-    void onTouchStart(int tx, int ty) override {}
-    void onTouchMove(int tx, int ty) override {}
-    void onTouchEnd(int tx, int ty) override {}
+    void move()
+    {
+        if (this->scroll == this->scrollTarget) {
+            return;
+        }
+        int diff = this->scrollTarget - this->scroll;
+        diff /= 3;
+        if (diff) {
+            this->scroll += diff;
+        } else {
+            this->scroll = this->scrollTarget;
+        }
+        this->render();
+    }
+
+    void onTouchStart(int tx, int ty) override
+    {
+        this->scrollTarget = this->scroll;
+        this->tx = tx;
+        this->ty = ty;
+    }
+
+    void onTouchMove(int tx, int ty) override
+    {
+        this->scrollTarget += (ty - this->ty) * 128;
+        this->tx = tx;
+        this->ty = ty;
+    }
+
+    void onTouchEnd(int tx, int ty) override
+    {
+        if (0 < this->scrollTarget) {
+            this->scrollTarget = 0;
+        }
+    }
 };
 
 static TFT_eSPI gfx;
@@ -415,7 +461,7 @@ void loop()
         if (seekbar->pos.y <= touchY) {
             touchingView = seekbar;
         } else {
-            touchingView = nullptr;
+            touchingView = songList;
         }
         if (touchingView) {
             touchingView->onTouchStart(touchX - touchingView->pos.x, touchY - touchingView->pos.y);
@@ -429,6 +475,9 @@ void loop()
         prevTouchX = touchX;
         prevTouchY = touchY;
     }
+
+    // アニメーション対象Viewを再描画
+    songList->move();
     delay(20);
 
 #if 0
