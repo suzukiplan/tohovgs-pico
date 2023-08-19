@@ -300,6 +300,8 @@ class SongListView : public View
     int scrollTarget;
     int tx, ty;
     int prevY;
+    int lastMoveY;
+    int flingY;
 
     void render()
     {
@@ -349,6 +351,8 @@ class SongListView : public View
         this->scroll = 0;
         this->scrollTarget = 0;
         this->prevY = INT_MAX;
+        this->lastMoveY = 0;
+        this->flingY = 0;
         init(gfx, 0, y, 240, h);
         this->sprite = new TFT_eSprite(gfx);
         this->sprite->createSprite(pos.w, pos.h);
@@ -356,8 +360,20 @@ class SongListView : public View
         this->render();
     }
 
+    void correctOverscroll()
+    {
+        if (0 == this->flingY && 0 < this->scrollTarget) {
+            this->scrollTarget = 0;
+        }
+    }
+
     void move()
     {
+        if (0 != this->flingY) {
+            this->scrollTarget += this->flingY;
+            this->flingY /= 3;
+            this->correctOverscroll();
+        }
         if (this->scroll == this->scrollTarget) {
             return;
         }
@@ -373,6 +389,8 @@ class SongListView : public View
 
     void onTouchStart(int tx, int ty) override
     {
+        this->flingY = 0;
+        this->lastMoveY = 0;
         this->scrollTarget = this->scroll;
         this->tx = tx;
         this->ty = ty;
@@ -380,16 +398,16 @@ class SongListView : public View
 
     void onTouchMove(int tx, int ty) override
     {
-        this->scrollTarget += (ty - this->ty) * 128;
+        this->lastMoveY = (ty - this->ty) * 128;
+        this->scrollTarget += this->lastMoveY;
         this->tx = tx;
         this->ty = ty;
     }
 
     void onTouchEnd(int tx, int ty) override
     {
-        if (0 < this->scrollTarget) {
-            this->scrollTarget = 0;
-        }
+        this->flingY = this->lastMoveY;
+        this->correctOverscroll();
     }
 };
 
