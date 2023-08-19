@@ -487,6 +487,7 @@ static struct VgsBgmData* phase6(void* raw, size_t size, struct VgsMmlErrorInfo*
 
     result->data = pCmp;
     result->size = cmp_len;
+    printf("compressed %lu -> %lu\n", size, cmp_len);
     return result;
 }
 
