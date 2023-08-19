@@ -65,6 +65,10 @@ make
 
 また、本プログラムでは以下の Open Source Software や素材を利用しています。
 
+- LZ4 Library
+  - Web Site: [https://github.com/lz4/lz4](https://github.com/lz4/lz4) - [lib](https://github.com/lz4/lz4/tree/dev/lib)
+  - License: [2-Clause BSD](./licenses-copy/lz4-library.txt)
+  - `Copyright (c) 2011-2020, Yann Collet`
 - TFT eSPI
   - Web Site: [https://github.com/Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI)
   - License: [Combined Licenses](./licenses-copy/TFT_eSPI.txt)
