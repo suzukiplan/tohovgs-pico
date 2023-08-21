@@ -9,3 +9,5 @@ rom/songlist.bin
 rom/bgm.dat
 BGM.mak
 rom/*.BGM
+rom/*.bgm
+

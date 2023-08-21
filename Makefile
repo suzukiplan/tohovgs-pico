@@ -5,12 +5,18 @@ ROMS = src/rom_small_font.c\
 	src/rom_k8x12S_jisx0208.c
 
 all: roms
+	make all-`uname`
+
+all-Darwin:
 	pio run -t upload
+
+all-Linux:
+	pio run -t upload --upload-port=/dev/ttyACM0
 
 build: roms
 	pio run
 
-roms: tools/bmp2img/bmp2img tools/varext/varext tools/bin2var/bin2var tools/sldmak/sldmak
+roms: tools/bmp2img/bmp2img tools/varext/varext tools/bin2var/bin2var tools/sldmak/sldmak tools/vgsmml/vgsmml
 	make rom/songlist_utf8.dat
 	tools/sldmak/sldmak rom/songlist_utf8.dat >BGM.mak
 	make -f BGM.mak all
@@ -35,6 +41,9 @@ tools/sldcnv/sldcnv: tools/sldcnv/sldcnv.cpp
 
 tools/sldmak/sldmak: tools/sldmak/sldmak.cpp
 	cd tools/sldmak && make
+
+tools/vgsmml/vgsmml:
+	cd tools/vgsmml && make
 
 src/rom_small_font.c: rom/small_font.bmp
 	tools/bmp2img/bmp2img -t 4x8 rom/small_font.bmp >src/rom_small_font.c

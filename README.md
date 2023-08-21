@@ -47,11 +47,19 @@ TODO: あとで書く
 
 ## How to Build
 
+### Build Support OS
+
+- Linux
+- macOS
+
+- ビルドに iconv コマンドが必要なため UNIX と互換性のある OS のビルドのみサポートしています（Windows でのビルドをサポートする予定はないので Linux または macOS を準備してください）
+- Linux は Ubuntu でビルド確認しています（おそらく Debian や Raspberry Pi Desktop 等でのビルドも可能だと思われます）
+
 ### Required Middleware
 
 - [PlatformIO Core](https://github.com/platformio/platformio-core)
 - GNU Make
-- CLANG (C++)
+- GCC C/C++
 
 ### How to Build
 
