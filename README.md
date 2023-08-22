@@ -24,26 +24,21 @@
 
 ## PIN assign
 
-### ILI9341 (LCD Module)
-
-|RaspberryPi Pico|ILI9341 (LCD Module)|
-|:-|:-|
-|`3.3V`|`VCC`|
-|`GPIO27`|`LED`|
-|`GND`|`GND`|
-|`GPIO17 (SPI0 CS)`|`CS`|
-|`GPIO22`|`RESET`|
-|`GPIO28`|`DC`|
-|`GPIO19 (SPI0 TX)`|`SDI (MOSI)`|
-|`GPIO18 (SPI0 SCK)`|`SCK`|
-|`GPIO20`|`T_CS`|
-|`GPIO16 (SPI0 MISO)`|`T_DO (MISO)`|
-|`GPIO18 (SPI0 SCK)`|`T_CLK`|
-|`GPIO19 (SPI0 MOSI)`|`T_DIN (MOSI)`|
-
-### UDA1334A (DAC Module)
-
-TODO: あとで書く
+|RaspberryPi Pico (SoC)|ILI9341 (LCD)|UDA1334A (DAC)|
+|:-|:-|:-|
+|14: `GPIO10 (SPI1 SCK)`|-|`BCLK`|
+|15: `GPIO11 (SPI1 TX)`|-|`DIN`|
+|17: `GPIO13 (SPI1 CS)`|-|`WSEL`|
+|21: `GPIO16 (SPI0 MISO)`|`T_DO (MISO)`|-|
+|22: `GPIO17 (SPI0 CS)`|`CS`|-|
+|24: `GPIO18 (SPI0 SCK)`|`SCK`, `T_CLK`|-|
+|25: `GPIO19 (SPI0 TX)`|`SDI (MOSI)`, `T_DIN (MOSI)`|-|
+|26: `GPIO20`|`T_CS`|-|
+|29: `GPIO22`|`RESET`|-|
+|32: `GPIO27`|`LED`|-|
+|34: `GPIO28`|`DC`|-|
+|36: `3.3V`|`VCC`|`VIN`|
+|38: `GND`|`GND`|`GND`|
 
 ## How to Build
 
