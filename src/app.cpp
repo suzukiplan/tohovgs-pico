@@ -475,9 +475,6 @@ static VGSDecoder vgs;
 
 void setup()
 {
-    // Load BGM for test (TODO: あとで消す)
-    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
-
     // 初期化中は本体LEDを点灯
     pinMode(25, OUTPUT);
     digitalWrite(25, HIGH);
@@ -555,17 +552,15 @@ void loop()
     // アニメーション対象Viewを再描画
     songList->move();
     delay(20);
+}
 
-#if 0
-    // タッチ座標を表示（あとで消す）
-    gfx.setViewport(0, 0, 240, 320);
-    gfx.startWrite();
-    printSmallFont(&gfx, 8, 118, "SCREEN W:%03d H:%03d", gfx.width(), gfx.height());
-    if (touched || prevTouched) {
-        printSmallFont(&gfx, 8, 128, "TOUCH X:%03d Y:%03d", touchX, touchY);
-    } else {
-        printSmallFont(&gfx, 8, 128, "NOT TOUCHING      ");
-    }
-    gfx.endWrite();
-#endif
+void setup1()
+{
+    // Load BGM for test (TODO: あとで消す)
+    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+}
+
+void loop1()
+{
+    delay(2);
 }
