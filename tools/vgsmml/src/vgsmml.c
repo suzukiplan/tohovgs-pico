@@ -454,10 +454,12 @@ static struct VgsBgmData* phase5(struct Channel* ch0, struct VgsMmlErrorInfo* er
 static struct VgsBgmData* phase6(void* raw, size_t size, struct VgsMmlErrorInfo* err)
 {
     struct VgsBgmData* result;
+#if 0
     int cmp_status;
     uLong src_len;
     uLong cmp_len;
     unsigned char* pCmp;
+#endif
 
     result = (struct VgsBgmData*)malloc(sizeof(struct VgsBgmData));
     if (NULL == result) {
@@ -465,7 +467,12 @@ static struct VgsBgmData* phase6(void* raw, size_t size, struct VgsMmlErrorInfo*
         err->code = VGSMML_ERR_NO_MEMORY;
         return NULL;
     }
-
+#if 1 /* without compress */
+    result->data = malloc(size);
+    result->size = size;
+    memcpy(result->data, raw, size);
+    return result;
+#else
     src_len = (uLong)size;
     cmp_len = compressBound(src_len);
     pCmp = (unsigned char*)malloc(cmp_len);
@@ -489,6 +496,7 @@ static struct VgsBgmData* phase6(void* raw, size_t size, struct VgsMmlErrorInfo*
     result->size = cmp_len;
     printf("compressed %lu -> %lu\n", size, cmp_len);
     return result;
+#endif
 }
 
 static void trimstring(char* src)

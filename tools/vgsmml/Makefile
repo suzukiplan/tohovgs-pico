@@ -1,4 +1,4 @@
 all: vgsmml
 
-vgsmml: src/vgsmml.c src/vgsmml.h src/cli.c ../../src/miniz.c
-	gcc -o vgsmml -DMINIZ_NO_STDIO -DMINIZ_NO_TIME -I./src -I../../include src/vgsmml.c src/cli.c ../../src/miniz.c
+vgsmml: src/vgsmml.c src/vgsmml.h src/cli.c
+	gcc -o vgsmml -I./src -I../../include src/vgsmml.c src/cli.c

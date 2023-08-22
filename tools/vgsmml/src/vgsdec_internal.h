@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vgsdec.h"
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.h"
 
 #define NTYPE_ENV1 1
 #define NTYPE_ENV2 2

@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
     }
 
     const char* compiler = "tools/vgsmml/vgsmml";
+    const char* ftv = "tools/vgsftv/vgsftv";
     printf("BGM_FILES =");
     for (auto bgm : mml) {
         printf(" rom/%s.bgm", bgm.c_str());
@@ -47,9 +48,11 @@ int main(int argc, char* argv[])
     printf("all: %s ${BGM_FILES} rom/bgm.dat", compiler);
     for (auto bgm : mml) {
         std::string dist = "rom/" + bgm + ".bgm";
+        std::string tmp1 = "rom/" + bgm + ".bg1";
         std::string src = "mml/" + bgm + ".mml";
         printf("\n%s: %s\n", dist.c_str(), src.c_str());
-        printf("\t%s %s %s\n", compiler, src.c_str(), dist.c_str());
+        printf("\t%s %s %s\n", compiler, src.c_str(), tmp1.c_str());
+        printf("\t%s %s %s\n", ftv, tmp1.c_str(), dist.c_str());
     }
     printf("\n");
 

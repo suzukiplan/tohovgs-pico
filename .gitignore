@@ -8,6 +8,5 @@ rom/songlist_utf8.dat
 rom/songlist.bin
 rom/bgm.dat
 BGM.mak
-rom/*.BGM
 rom/*.bgm
-
+rom/*.bg1
