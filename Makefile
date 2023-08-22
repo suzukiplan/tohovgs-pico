@@ -25,6 +25,7 @@ roms:
 	cd tools/sldmak && make
 	cd tools/vgsmml && make
 	cd tools/vgsftv && make
+	cd tools/vgslz4 && make
 	make rom/songlist_utf8.dat
 	tools/sldmak/sldmak rom/songlist_utf8.dat >BGM.mak
 	make -f BGM.mak all

@@ -10,3 +10,5 @@ rom/bgm.dat
 BGM.mak
 rom/*.bgm
 rom/*.bg1
+rom/*.bg2
+

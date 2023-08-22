@@ -73,11 +73,10 @@ make
 
 また、本プログラムでは以下の Open Source Software や素材を利用しています。
 
-- miniz
-  - Web Site: [https://github.com/richgel999/miniz](https://github.com/richgel999/miniz)
-  - License: [MIT](./licenses-copy/miniz.txt)
-  - `Copyright 2013-2014 RAD Game Tools and Valve Software`
-  - `Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC`
+- LZ4 Library
+  - Web Site: [https://github.com/lz4/lz4](https://github.com/lz4/lz4) - [lib](https://github.com/lz4/lz4/tree/dev/lib)
+  - License: [2-Clause BSD](./licenses-copy/lz4-library.txt)
+  - `Copyright (c) 2011-2020, Yann Collet`
 - TFT eSPI
   - Web Site: [https://github.com/Bodmer/TFT_eSPI](https://github.com/Bodmer/TFT_eSPI)
   - License: [Combined Licenses](./licenses-copy/TFT_eSPI.txt)
