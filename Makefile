@@ -62,6 +62,8 @@ include/roms.hpp: ${ROMS}
 
 format: 
 	make execute-format FILENAME=./src/app.cpp
+	make execute-format FILENAME=./src/vgstone.c
+	make execute-format FILENAME=./src/vgsdecv.hpp
         
 execute-format:
 	clang-format -style=file < ${FILENAME} > ${FILENAME}.bak

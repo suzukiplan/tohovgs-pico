@@ -5,6 +5,7 @@
 
 #include "model.h"
 #include "roms.hpp"
+#include "vgsdecv.hpp"
 #include <SPI.h>
 #include <TFT_eSPI.h>
 
@@ -470,9 +471,13 @@ static KeyboardView* keys[6];
 static SongListView* songList;
 static SeekbarView* seekbar;
 static Album* albums = (Album*)rom_songlist;
+static VGSDecoder vgs;
 
 void setup()
 {
+    // Load BGM for test (TODO: あとで消す)
+    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+
     // 初期化中は本体LEDを点灯
     pinMode(25, OUTPUT);
     digitalWrite(25, HIGH);
