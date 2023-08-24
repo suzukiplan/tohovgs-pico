@@ -453,6 +453,9 @@ class SongListView : public View
     void onTouchMove(int tx, int ty) override
     {
         this->lastMoveY = (ty - this->ty) * 128;
+        if (0 < this->scrollTarget || this->scrollTarget < this->scrollBottom) {
+            this->lastMoveY /= 6;
+        }
         this->scrollTarget += this->lastMoveY;
         this->tx = tx;
         this->ty = ty;
