@@ -322,6 +322,7 @@ class SongListView : public View
     int swipeTotal;
     bool isScroll;
     bool isSwipe;
+    int pageMove;
 
     inline void transferSprite()
     {
@@ -420,6 +421,16 @@ class SongListView : public View
         this->albums = albums;
         this->albumCount = albumCount;
         this->albumPos = 0;
+        this->resetVars();
+        init(gfx, 0, y, 240, h);
+        this->sprite = new TFT_eSprite(gfx);
+        this->sprite->createSprite(pos.w, pos.h);
+        this->sprite->setColorDepth(16);
+        this->render();
+    }
+
+    void resetVars()
+    {
         this->scroll = 0;
         this->scrollTarget = 0;
         this->scrollBottom = 0;
@@ -434,11 +445,7 @@ class SongListView : public View
         this->swipeTotal = 0;
         this->isScroll = false;
         this->isSwipe = false;
-        init(gfx, 0, y, 240, h);
-        this->sprite = new TFT_eSprite(gfx);
-        this->sprite->createSprite(pos.w, pos.h);
-        this->sprite->setColorDepth(16);
-        this->render();
+        this->pageMove = 0;
     }
 
     void correctOverscroll()
@@ -455,13 +462,13 @@ class SongListView : public View
     void correctPagePosition()
     {
         if (0 == this->flingX) {
-            if (1280 < abs(this->swipeTarget)) {
+            if (2560 < abs(this->swipeTarget)) {
                 if (this->swipeTarget < 0) {
-                    // TODO: move to left page
-                    this->swipeTarget = 0;
+                    this->pageMove = -1;
                 } else {
                     // TODO: move to right page
                     this->swipeTarget = 0;
+                    this->pageMove = 1;
                 }
             } else {
                 this->swipeTarget = 0;
@@ -471,32 +478,49 @@ class SongListView : public View
 
     void move()
     {
-        // move Y
-        if (0 != this->flingY) {
-            this->scrollTarget += this->flingY;
-            this->flingY /= 3;
-            this->correctOverscroll();
-        }
-        int diff = this->scrollTarget - this->scroll;
-        diff /= 3;
-        if (diff) {
-            this->scroll += diff;
+        if (this->pageMove && 0 == this->flingX) {
+            int diff = 240 * 128 * this->pageMove - this->swipe;
+            diff /= 3;
+            if (diff) {
+                this->swipe += diff;
+            } else {
+                this->pageMove *= -1;
+                this->albumPos += this->pageMove;
+                if (this->albumPos < 0) {
+                    this->albumPos = this->albumCount - 1;
+                } else if (this->albumCount <= this->albumPos) {
+                    this->albumPos = 0;
+                }
+                this->resetVars();
+            }
         } else {
-            this->scroll = this->scrollTarget;
-        }
+            // move Y
+            if (0 != this->flingY) {
+                this->scrollTarget += this->flingY;
+                this->flingY /= 3;
+                this->correctOverscroll();
+            }
+            int diff = this->scrollTarget - this->scroll;
+            diff /= 3;
+            if (diff) {
+                this->scroll += diff;
+            } else {
+                this->scroll = this->scrollTarget;
+            }
 
-        // move X
-        if (0 != this->flingX) {
-            this->swipeTarget += this->flingX;
-            this->flingX /= 3;
-            this->correctPagePosition();
-        }
-        diff = this->swipeTarget - this->swipe;
-        diff /= 3;
-        if (diff) {
-            this->swipe += diff;
-        } else {
-            this->swipe = this->swipeTarget;
+            // move X
+            if (0 != this->flingX) {
+                this->swipeTarget += this->flingX;
+                this->flingX /= 3;
+                this->correctPagePosition();
+            }
+            diff = this->swipeTarget - this->swipe;
+            diff /= 3;
+            if (diff) {
+                this->swipe += diff;
+            } else {
+                this->swipe = this->swipeTarget;
+            }
         }
 
         this->render();
@@ -504,6 +528,7 @@ class SongListView : public View
 
     void onTouchStart(int tx, int ty) override
     {
+        if (this->pageMove) return;
         this->flingX = 0;
         this->flingY = 0;
         this->lastMoveX = 0;
@@ -520,6 +545,7 @@ class SongListView : public View
 
     void onTouchMove(int tx, int ty) override
     {
+        if (this->pageMove) return;
         this->lastMoveX = (tx - this->tx) * 128;
         this->lastMoveY = (ty - this->ty) * 128;
 
@@ -558,6 +584,7 @@ class SongListView : public View
 
     void onTouchEnd(int tx, int ty) override
     {
+        if (this->pageMove) return;
         this->flingY = this->lastMoveY;
         this->flingX = this->lastMoveX;
         this->correctOverscroll();
