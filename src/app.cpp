@@ -8,6 +8,7 @@
 #include "vgsdecv.hpp"
 #include <SPI.h>
 #include <TFT_eSPI.h>
+#include <math.h>
 
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
@@ -86,23 +87,30 @@ static void printKanji(TFT_eSPI* gfx, int x, int y, const char* format, ...)
     va_end(args);
     int w = 0;
     for (int i = 0; buf[i] && i < 64; i += w / 4, x += w) {
+        if (240 <= x) {
+            return;
+        }
         if (buf[i] & 0x80) {
             w = 8;
-            int jis = sjis2jis((const unsigned char*)&buf[i]) * 12;
-            for (int yy = 0; yy < 12; yy++) {
-                for (int xx = 0; xx < 8; xx++) {
-                    if (rom_k8x12S_jisx0208[jis + yy] & bit[xx]) {
-                        gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+            if (0 < x + w) {
+                int jis = sjis2jis((const unsigned char*)&buf[i]) * 12;
+                for (int yy = 0; yy < 12; yy++) {
+                    for (int xx = 0; xx < 8; xx++) {
+                        if (rom_k8x12S_jisx0208[jis + yy] & bit[xx]) {
+                            gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+                        }
                     }
                 }
             }
         } else {
             w = 4;
-            int jis = buf[i] * 12;
-            for (int yy = 0; yy < 12; yy++) {
-                for (int xx = 0; xx < 4; xx++) {
-                    if (rom_k8x12S_jisx0201[jis + yy] & bit[xx]) {
-                        gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+            if (0 < x + w) {
+                int jis = buf[i] * 12;
+                for (int yy = 0; yy < 12; yy++) {
+                    for (int xx = 0; xx < 4; xx++) {
+                        if (rom_k8x12S_jisx0201[jis + yy] & bit[xx]) {
+                            gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+                        }
                     }
                 }
             }
@@ -295,16 +303,21 @@ class SeekbarView : public View
 class SongListView : public View
 {
   private:
-    Album* album;
+    Album* albums;
+    int albumCount;
+    int albumPos;
     TFT_eSprite* sprite;
     int scroll;
     int scrollTarget;
     int scrollBottom;
     int contentHeight;
     int tx, ty;
-    int prevY;
     int lastMoveY;
     int flingY;
+    int lastMoveX;
+    int flingX;
+    int swipe;
+    int swipeTarget;
 
     inline void transferSprite()
     {
@@ -313,23 +326,15 @@ class SongListView : public View
         this->gfx->endWrite();
     }
 
-    void render()
+    int renderContent(Album* album, int x, int y)
     {
-        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        int y = this->scroll / 128;
-        if (this->prevY == y) {
-            return;
-        } else {
-            this->prevY = y;
-        }
-        this->sprite->fillScreen(COLOR_LIST_BG);
         y += 8;
         if (-12 < y) {
-            printKanji(this->sprite, 4, y, "%s", album->name);
+            printKanji(this->sprite, x + 4, y, "%s", album->name);
         }
         y += 16;
         if (-12 < y) {
-            printKanji(this->sprite, pos.w - strlen(album->copyright) * 4 - 4, y, "%s", album->copyright);
+            printKanji(this->sprite, x + pos.w - strlen(album->copyright) * 4 - 4, y, "%s", album->copyright);
         }
         y += 24;
         for (int i = 0; i < 32; i++) {
@@ -338,70 +343,88 @@ class SongListView : public View
                     y += 22;
                     continue;
                 } else if (pos.h <= y) {
-                    if (0 < this->contentHeight) {
-                        this->transferSprite();
-                        return;
+                    if (this->contentHeight) {
+                        return this->contentHeight;
                     } else {
                         y += 22;
                         continue;
                     }
                 }
-                this->sprite->fillRect(6, y, pos.w - 12, 20, album->color);
-                this->sprite->drawFastVLine(6, y, 20, COLOR_GRAY);
-                this->sprite->drawFastHLine(6, y + 19, pos.w - 12, COLOR_BLACK);
-                this->sprite->drawFastVLine(pos.w - 6, y, 20, COLOR_BLACK);
-                this->sprite->drawFastHLine(6, y, pos.w - 12, COLOR_GRAY);
-                printKanji(this->sprite, 10, y + 4, "%s", album->songs[i].name);
+                this->sprite->fillRect(x + 6, y, pos.w - 12, 20, album->color);
+                this->sprite->drawFastVLine(x + 6, y, 20, COLOR_GRAY);
+                this->sprite->drawFastHLine(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
+                this->sprite->drawFastVLine(x + pos.w - 6, y, 20, COLOR_BLACK);
+                this->sprite->drawFastHLine(x + 6, y, pos.w - 12, COLOR_GRAY);
+                printKanji(this->sprite, x + 10, y + 4, "%s", album->songs[i].name);
                 y += 22;
             }
         }
         y += 4;
         if (y < pos.h) {
-            printKanji(this->sprite, 4, y, "Composed by ZUN.");
+            printKanji(this->sprite, x + 4, y, "Composed by ZUN.");
         } else if (this->contentHeight) {
-            this->transferSprite();
-            return;
+            return this->contentHeight;
         }
         y += 16;
         if (y < pos.h) {
-            printKanji(this->sprite, 8, y, "This app is an alternative fiction of the Touhou Project.");
+            printKanji(this->sprite, x + 8, y, "This app is an alternative fiction of the Touhou Project.");
         } else if (this->contentHeight) {
-            this->transferSprite();
-            return;
+            return this->contentHeight;
         }
         y += 16;
         if (y < pos.h) {
-            printKanji(this->sprite, 140, y, "Arranged by Yoji Suzuki.");
+            printKanji(this->sprite, x + 140, y, "Arranged by Yoji Suzuki.");
         } else if (this->contentHeight) {
-            this->transferSprite();
-            return;
+            return this->contentHeight;
         }
         y += 14;
         if (y < pos.h) {
-            printKanji(this->sprite, 100, y, "(C)2013, Presented by SUZUKI PLAN.");
+            printKanji(this->sprite, x + 100, y, "(C)2013, Presented by SUZUKI PLAN.");
         } else if (this->contentHeight) {
-            this->transferSprite();
-            return;
+            return this->contentHeight;
         }
+        return y + 20;
+    }
 
-        if (0 == this->contentHeight) {
-            y += 20;
-            this->contentHeight = y;
+    void render()
+    {
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        int x = this->swipe / 128;
+        int y = this->scroll / 128;
+        this->sprite->fillScreen(COLOR_LIST_BG);
+        if (this->contentHeight) {
+            this->renderContent(&this->albums[this->albumPos], x, y);
+        } else {
+            this->contentHeight = this->renderContent(&this->albums[this->albumPos], x, y);
             this->scrollBottom = (pos.h - this->contentHeight) * 128;
+        }
+        if (x < 0) {
+            int pos = this->albumPos + 1;
+            pos %= this->albumCount;
+            this->renderContent(&this->albums[pos], x + 240, 0);
+        } else if (0 < x) {
+            int pos = this->albumPos - 1;
+            if (pos < 0) pos = this->albumCount - 1;
+            this->renderContent(&this->albums[pos], x - 240, 0);
         }
         this->transferSprite();
     }
 
   public:
-    SongListView(TFT_eSPI* gfx, Album* album, int y, int h)
+    SongListView(TFT_eSPI* gfx, Album* albums, int albumCount, int y, int h)
     {
-        this->album = album;
+        this->albums = albums;
+        this->albumCount = albumCount;
+        this->albumPos = 0;
         this->scroll = 0;
         this->scrollTarget = 0;
         this->scrollBottom = 0;
-        this->prevY = INT_MAX;
         this->lastMoveY = 0;
         this->flingY = 0;
+        this->swipe = 0;
+        this->swipeTarget = 0;
+        this->lastMoveX = 0;
+        this->flingX = 0;
         this->contentHeight = 0;
         init(gfx, 0, y, 240, h);
         this->sprite = new TFT_eSprite(gfx);
@@ -421,15 +444,30 @@ class SongListView : public View
         }
     }
 
+    void correctPagePosition()
+    {
+        if (0 == this->flingX) {
+            if (1280 < abs(this->swipeTarget)) {
+                if (this->swipeTarget < 0) {
+                    // TODO: move to left page
+                    this->swipeTarget = 0;
+                } else {
+                    // TODO: move to right page
+                    this->swipeTarget = 0;
+                }
+            } else {
+                this->swipeTarget = 0;
+            }
+        }
+    }
+
     void move()
     {
+        // move Y
         if (0 != this->flingY) {
             this->scrollTarget += this->flingY;
             this->flingY /= 3;
             this->correctOverscroll();
-        }
-        if (this->scroll == this->scrollTarget) {
-            return;
         }
         int diff = this->scrollTarget - this->scroll;
         diff /= 3;
@@ -438,13 +476,31 @@ class SongListView : public View
         } else {
             this->scroll = this->scrollTarget;
         }
+
+        // move X
+        if (0 != this->flingX) {
+            this->swipeTarget += this->flingX;
+            this->flingX /= 3;
+            this->correctPagePosition();
+        }
+        diff = this->swipeTarget - this->swipe;
+        diff /= 3;
+        if (diff) {
+            this->swipe += diff;
+        } else {
+            this->swipe = this->swipeTarget;
+        }
+
         this->render();
     }
 
     void onTouchStart(int tx, int ty) override
     {
+        this->flingX = 0;
         this->flingY = 0;
+        this->lastMoveX = 0;
         this->lastMoveY = 0;
+        this->swipeTarget = this->swipe;
         this->scrollTarget = this->scroll;
         this->tx = tx;
         this->ty = ty;
@@ -452,10 +508,12 @@ class SongListView : public View
 
     void onTouchMove(int tx, int ty) override
     {
+        this->lastMoveX = (tx - this->tx) * 128;
         this->lastMoveY = (ty - this->ty) * 128;
         if (0 < this->scrollTarget || this->scrollTarget < this->scrollBottom) {
             this->lastMoveY /= 6;
         }
+        this->swipeTarget += this->lastMoveX;
         this->scrollTarget += this->lastMoveY;
         this->tx = tx;
         this->ty = ty;
@@ -464,7 +522,9 @@ class SongListView : public View
     void onTouchEnd(int tx, int ty) override
     {
         this->flingY = this->lastMoveY;
+        this->flingX = this->lastMoveX;
         this->correctOverscroll();
+        this->correctPagePosition();
     }
 };
 
@@ -511,7 +571,7 @@ void setup()
     for (int i = 0; i < 6; i++) {
         keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
     }
-    songList = new SongListView(&gfx, &albums[0], 105, 190);
+    songList = new SongListView(&gfx, albums, sizeof(rom_songlist) / sizeof(Album), 105, 190);
     seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
