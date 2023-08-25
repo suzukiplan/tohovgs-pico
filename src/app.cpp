@@ -318,6 +318,10 @@ class SongListView : public View
     int flingX;
     int swipe;
     int swipeTarget;
+    int scrollTotal;
+    int swipeTotal;
+    bool isScroll;
+    bool isSwipe;
 
     inline void transferSprite()
     {
@@ -426,6 +430,10 @@ class SongListView : public View
         this->lastMoveX = 0;
         this->flingX = 0;
         this->contentHeight = 0;
+        this->scrollTotal = 0;
+        this->swipeTotal = 0;
+        this->isScroll = false;
+        this->isSwipe = false;
         init(gfx, 0, y, 240, h);
         this->sprite = new TFT_eSprite(gfx);
         this->sprite->createSprite(pos.w, pos.h);
@@ -504,17 +512,46 @@ class SongListView : public View
         this->scrollTarget = this->scroll;
         this->tx = tx;
         this->ty = ty;
+        this->scrollTotal = 0;
+        this->swipeTotal = 0;
+        this->isScroll = false;
+        this->isSwipe = false;
     }
 
     void onTouchMove(int tx, int ty) override
     {
         this->lastMoveX = (tx - this->tx) * 128;
         this->lastMoveY = (ty - this->ty) * 128;
-        if (0 < this->scrollTarget || this->scrollTarget < this->scrollBottom) {
-            this->lastMoveY /= 6;
+
+        if (!this->isScroll && !this->isSwipe) {
+            this->scrollTotal += this->lastMoveY;
+            this->swipeTotal += this->lastMoveX;
+            if (128 * 10 < abs(this->scrollTotal) || 128 * 10 < abs(this->swipeTotal)) {
+                if (abs(this->scrollTotal) < abs(this->swipeTotal)) {
+                    this->isSwipe = true;
+                } else {
+                    this->isScroll = true;
+                }
+            }
         }
-        this->swipeTarget += this->lastMoveX;
-        this->scrollTarget += this->lastMoveY;
+
+        if (!this->isSwipe) {
+            if (0 < this->scrollTarget || this->scrollTarget < this->scrollBottom) {
+                this->lastMoveY /= 6;
+            }
+            this->scrollTarget += this->lastMoveY;
+        } else {
+            this->lastMoveY = 0;
+            this->scrollTarget = this->scroll;
+        }
+
+        if (this->isSwipe) {
+            this->swipeTarget += this->lastMoveX;
+        } else {
+            this->lastMoveX = 0;
+            this->swipeTarget = 0;
+        }
+
         this->tx = tx;
         this->ty = ty;
     }
@@ -620,7 +657,7 @@ void loop()
 void setup1()
 {
     // Load BGM for test (TODO: あとで消す)
-    //vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+    // vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
 }
 
 void loop1()
