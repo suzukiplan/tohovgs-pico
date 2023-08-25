@@ -620,7 +620,7 @@ void loop()
 void setup1()
 {
     // Load BGM for test (TODO: あとで消す)
-    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+    //vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
 }
 
 void loop1()
