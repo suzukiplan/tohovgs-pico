@@ -10,6 +10,8 @@
 #include <TFT_eSPI.h>
 #include <math.h>
 
+// #define REVERSE_SCREEN
+
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_LIST_BG 0b0000100010100100
@@ -612,10 +614,10 @@ void setup()
     // ディスプレイを初期化
     gfx.init();
     gfx.startWrite();
-    gfx.setRotation(2);
-    gfx.fillScreen(COLOR_BG);
 
-    // Touch Calibration を初期化
+    // ディスプレイの向きを初期化
+#ifdef REVERSE_SCREEN
+    gfx.setRotation(2);
     uint16_t touch[] = {
         300,
         3600,
@@ -623,6 +625,18 @@ void setup()
         3600,
         0b010};
     gfx.setTouch(touch);
+#else
+    gfx.setRotation(0);
+    uint16_t touch[] = {
+        300,
+        3600,
+        300,
+        3600,
+        0b100};
+    gfx.setTouch(touch);
+#endif
+
+    gfx.fillScreen(COLOR_BG);
 
     // ガイドラインを描画
     gfx.drawLine(0, 34, 240, 34, COLOR_GRAY);
