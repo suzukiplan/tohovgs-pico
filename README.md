@@ -37,8 +37,9 @@
 |29: `GPIO22`|`RESET`|-|
 |32: `GPIO27`|`LED`|-|
 |34: `GPIO28`|`DC`|-|
-|36: `3.3V`|`VCC`|`VIN`|
+|36: `3.3V`|`VCC`|-|
 |38: `GND`|`GND`|`GND`|
+|40: `VOUT`|-|`VIN`|
 
 ## How to Build
 
