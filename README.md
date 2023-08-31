@@ -27,8 +27,8 @@
 |RaspberryPi Pico (SoC)|ILI9341 (LCD)|UDA1334A (DAC)|
 |:-|:-|:-|
 |14: `GPIO10 (SPI1 SCK)`|-|`BCLK`|
-|15: `GPIO11 (SPI1 TX)`|-|`DIN`|
-|17: `GPIO13 (SPI1 CS)`|-|`WSEL`|
+|15: `GPIO11 (SPI1 TX)`|-|`WSEL`|
+|17: `GPIO13 (SPI1 CS)`|-|`DIN`|
 |21: `GPIO16 (SPI0 MISO)`|`T_DO (MISO)`|-|
 |22: `GPIO17 (SPI0 CS)`|`CS`|-|
 |24: `GPIO18 (SPI0 SCK)`|`SCK`, `T_CLK`|-|
