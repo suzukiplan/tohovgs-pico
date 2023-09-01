@@ -183,6 +183,10 @@ class VGSDecoder
     bool load(const void* data, size_t size)
     {
         memset(&this->ctx, 0, sizeof(this->ctx));
+        this->ctx.volumeRate = 100;
+        for (int i = 0; i < 6; i++) {
+            this->ctx.ch[i].volumeRate = 100;
+        }
         this->bgm.size = LZ4_decompress_safe((const char*)data,
                                              (char*)this->bgm.data,
                                              (int)size,
@@ -289,6 +293,7 @@ class VGSDecoder
                     wav = 32767;
                 else if (wav < -32768)
                     wav = -32768;
+                printf("bp=%d\n", wav);
                 (*bp) = (short)wav;
             }
             ctx.waitTime--;
