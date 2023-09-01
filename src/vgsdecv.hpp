@@ -195,9 +195,9 @@ class VGSDecoder
         return this->ctx.play;
     }
 
-    void execute(void* buffer, size_t size, bool stereo = false)
+    bool execute(void* buffer, size_t size, bool stereo = false)
     {
-        if (!buffer) return;
+        if (!buffer) return false;
 
         char* buf = (char*)buffer;
         int pw;
@@ -208,19 +208,19 @@ class VGSDecoder
         memset(buf, 0, size);
         if (!ctx.play || bgm.size < 1) {
             ctx.stopped = true;
-            return;
+            return false;
         }
         if (100 <= ctx.fade2) {
             ctx.play = false;
-            return;
+            return false;
         }
         ctx.waitTime = get_next_note();
         if (0 == ctx.waitTime) {
             ctx.play = false;
-            return;
+            return false;
         }
         if (0 == ctx.mvol) {
-            return;
+            return false;
         }
         for (int i = 0; i < (int)size; i += stereo ? 4 : 2, ctx.hz++) {
             for (int j = 0; j < 6; j++) {
@@ -302,7 +302,7 @@ class VGSDecoder
             if (0 == ctx.waitTime) {
                 ctx.waitTime = get_next_note();
                 if (0 == ctx.waitTime) {
-                    return; /* no data */
+                    return true; /* detect no data (partial data exist) */
                 }
             }
             /* fade out */
@@ -321,5 +321,6 @@ class VGSDecoder
                 }
             }
         }
+        return true;
     }
 };

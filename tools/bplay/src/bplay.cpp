@@ -36,8 +36,7 @@ int main(int argc, char* argv[])
 
     unsigned char sbuf[8192];
 
-    while (1) {
-        vgs.execute(sbuf, sizeof(sbuf));
+    while (vgs.execute(sbuf, sizeof(sbuf))) {
         sound_enqueue(snd, sbuf, sizeof(sbuf));
         while (sizeof(sbuf) * 4 < sound_buffer_left(snd)) {
             usleep(1000);
