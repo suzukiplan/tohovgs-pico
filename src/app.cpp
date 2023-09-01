@@ -10,6 +10,7 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <math.h>
+#include <pico/stdlib.h>
 
 #define REVERSE_SCREEN
 
@@ -712,7 +713,13 @@ void setup1()
 
 void loop1()
 {
-    static uint8_t buffer[1024];
-    vgs.execute(buffer, sizeof(buffer), true);
-    i2s.write(buffer, sizeof(buffer));
+    static int16_t buffer[256];
+    static int bufferIndex = 0;
+    if (0 == bufferIndex) {
+        vgs.execute(buffer, sizeof(buffer));
+    }
+    int16_t wav = buffer[bufferIndex++] / 8;
+    bufferIndex &= 255;
+    i2s.write(wav);
+    i2s.write(wav);
 }
