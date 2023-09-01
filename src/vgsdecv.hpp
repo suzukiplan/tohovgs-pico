@@ -191,12 +191,8 @@ class VGSDecoder
                                              (char*)this->bgm.data,
                                              (int)size,
                                              (int)sizeof(this->bgm.data));
-        if (0 < this->bgm.size) {
-            this->ctx.play = true;
-            return true;
-        } else {
-            return false;
-        }
+        this->ctx.play = 0 < this->bgm.size;
+        return this->ctx.play;
     }
 
     void execute(void* buffer, size_t size, bool stereo = false)
