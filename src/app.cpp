@@ -6,11 +6,12 @@
 #include "model.h"
 #include "roms.hpp"
 #include "vgsdecv.hpp"
+#include <I2S.h>
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <math.h>
 
-// #define REVERSE_SCREEN
+#define REVERSE_SCREEN
 
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
@@ -595,6 +596,7 @@ class SongListView : public View
 };
 
 static TFT_eSPI gfx;
+static I2S i2s(OUTPUT);
 static TopBoardView* topBoard;
 static KeyboardView* keys[6];
 static SongListView* songList;
@@ -695,13 +697,25 @@ void loop()
     delay(20);
 }
 
+
+#if 1
+#define UDA1334A_PIN_BCLK 10
+#define UDA1334A_PIN_WSEL 11
+#define UDA1334A_PIN_DIN 13
+
 void setup1()
 {
-    // Load BGM for test (TODO: あとで消す)
-    // vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+    i2s.setBCLK(UDA1334A_PIN_BCLK);
+    i2s.setDATA(UDA1334A_PIN_DIN);
+    i2s.setBitsPerSample(16);
+    i2s.begin(22050);
 }
 
 void loop1()
 {
-    delay(2);
+    static uint8_t buffer[1024];
+    vgs.execute(buffer, sizeof(buffer), true);
+    i2s.write(buffer, sizeof(buffer));
 }
+#endif
