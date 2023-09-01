@@ -37,6 +37,9 @@ int main(int argc, char* argv[])
     unsigned char sbuf[8192];
 
     while (vgs.execute(sbuf, sizeof(sbuf))) {
+        if (0 < vgs.getLoopCount()) {
+            vgs.fadeout();
+        }
         sound_enqueue(snd, sbuf, sizeof(sbuf));
         while (sizeof(sbuf) * 4 < sound_buffer_left(snd)) {
             usleep(1000);

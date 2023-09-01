@@ -323,4 +323,16 @@ class VGSDecoder
         }
         return true;
     }
+
+    void getLoopCount()
+    {
+        return ctx.loop;
+    }
+
+    void fadeout()
+    {
+        if (0 == ctx.fade2) {
+            ctx.fade2 = 1;
+        }
+    }
 };
