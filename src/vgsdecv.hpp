@@ -324,7 +324,7 @@ class VGSDecoder
         return true;
     }
 
-    void getLoopCount()
+    int getLoopCount()
     {
         return ctx.loop;
     }
