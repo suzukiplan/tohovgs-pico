@@ -697,8 +697,6 @@ void loop()
     delay(20);
 }
 
-
-#if 1
 #define UDA1334A_PIN_BCLK 10
 #define UDA1334A_PIN_WSEL 11
 #define UDA1334A_PIN_DIN 13
@@ -718,4 +716,3 @@ void loop1()
     vgs.execute(buffer, sizeof(buffer), true);
     i2s.write(buffer, sizeof(buffer));
 }
-#endif
