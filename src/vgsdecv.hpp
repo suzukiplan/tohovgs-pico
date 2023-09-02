@@ -34,7 +34,7 @@ class VGSDecoder
 {
   private:
     struct BGM {
-        unsigned char data[128 * 1024];
+        unsigned char data[108 * 1024];
         int size;
     } bgm;
 

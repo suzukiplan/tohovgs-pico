@@ -701,14 +701,15 @@ void loop()
 #define UDA1334A_PIN_DIN 13
 #define UDA1334A_PIN_BCLK 14
 #define UDA1334A_PIN_WSEL 15
-#define VGS_BUFFER_SIZE 4096
+#define VGS_BUFFER_SIZE 4096 /* x2 of I2S internal ring buffer size */
 
 void setup1()
 {
-    vgs.load(&rom_bgm[albums[0].songs[2].bgmHead], albums[0].songs[2].bgmSize);
+    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
     i2s.setBCLK(UDA1334A_PIN_BCLK);
     i2s.setDATA(UDA1334A_PIN_DIN);
     i2s.setBitsPerSample(16);
+    i2s.setBuffers(16, 128, 0); // 2048 bytes
     i2s.begin(22050);
 }
 
@@ -717,31 +718,11 @@ void loop1()
     static int16_t buffer[2][VGS_BUFFER_SIZE];
     static int page = 0;
     static int index = 0;
-    static bool buffered = false;
     if (0 == index) {
         page = 1 - page;
-        if (buffered) {
-            // skip buffering (already buffered)
-            buffered = false;
-        } else {
-            // buffering current page
-            vgs.execute(buffer[page], VGS_BUFFER_SIZE * 2);
-        }
-        // force streaming 1st sample
-        i2s.write16(buffer[page][index], buffer[page][index]);
-        index = 1;
-    }
-    if (4 <= i2s.availableForWrite()) {
-        // streaming current buffer without blocking
-        i2s.write16(buffer[page][index], buffer[page][index]);
-        index = (index + 1) % VGS_BUFFER_SIZE;
-    } else if (!buffered) {
-        // buffering next data
+    } else if (VGS_BUFFER_SIZE / 2 == index) {
         vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
-        buffered = true;
-    } else {
-        // streaming current buffer with blocking
-        i2s.write16(buffer[page][index], buffer[page][index]);
-        index = (index + 1) % VGS_BUFFER_SIZE;
     }
+    i2s.write16(buffer[page][index], buffer[page][index]);
+    index = (index + 1) % VGS_BUFFER_SIZE;
 }
