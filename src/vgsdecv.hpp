@@ -183,7 +183,7 @@ class VGSDecoder
     bool load(const void* data, size_t size)
     {
         memset(&this->ctx, 0, sizeof(this->ctx));
-        this->ctx.volumeRate = 100;
+        this->ctx.volumeRate = 16;
         for (int i = 0; i < 6; i++) {
             this->ctx.ch[i].volumeRate = 100;
         }

@@ -698,13 +698,14 @@ void loop()
     delay(20);
 }
 
-#define UDA1334A_PIN_BCLK 10
-#define UDA1334A_PIN_WSEL 11
 #define UDA1334A_PIN_DIN 13
+#define UDA1334A_PIN_BCLK 14
+#define UDA1334A_PIN_WSEL 15
+#define VGS_BUFFER_SIZE 4096
 
 void setup1()
 {
-    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+    vgs.load(&rom_bgm[albums[0].songs[2].bgmHead], albums[0].songs[2].bgmSize);
     i2s.setBCLK(UDA1334A_PIN_BCLK);
     i2s.setDATA(UDA1334A_PIN_DIN);
     i2s.setBitsPerSample(16);
@@ -713,13 +714,33 @@ void setup1()
 
 void loop1()
 {
-    static int16_t buffer[256];
-    static int bufferIndex = 0;
-    if (0 == bufferIndex) {
-        vgs.execute(buffer, sizeof(buffer));
+    static int16_t buffer[2][VGS_BUFFER_SIZE];
+    static int page = 0;
+    static int index = 0;
+    static bool buffered = false;
+    static bool needMove = false;
+    if (needMove) {
+        needMove = false;
+        page = 1 - page;
+        if (buffered) {
+            // skip buffering (already buffered)
+            buffered = false;
+        } else {
+            // buffering current page
+            vgs.execute(buffer[page], VGS_BUFFER_SIZE * 2);
+        }
     }
-    int16_t wav = buffer[bufferIndex++] / 8;
-    bufferIndex &= 255;
-    i2s.write(wav);
-    i2s.write(wav);
+    if (4 <= i2s.availableForWrite()) {
+        // streaming current buffer
+        i2s.write(buffer[page][index]);
+        i2s.write(buffer[page][index++]);
+        index &= VGS_BUFFER_SIZE - 1;
+        needMove = 0 == index ? true : false;
+    } else if (!buffered) {
+        // buffering next data
+        vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
+        buffered = true;
+    } else {
+        delay(10);
+    }
 }

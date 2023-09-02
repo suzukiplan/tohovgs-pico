@@ -26,9 +26,10 @@
 
 |RaspberryPi Pico (SoC)|ILI9341 (LCD)|UDA1334A (DAC)|
 |:-|:-|:-|
-|14: `GPIO10 (SPI1 SCK)`|-|`BCLK`|
-|15: `GPIO11 (SPI1 TX)`|-|`WSEL`|
 |17: `GPIO13 (SPI1 CS)`|-|`DIN`|
+|18: `GND`|-|`GND`|
+|19: `GPIO14 (SPI1 SCK)`|-|`BCLK`|
+|20: `GPIO15 (SPI1 TX)`|-|`WSEL`|
 |21: `GPIO16 (SPI0 MISO)`|`T_DO (MISO)`|-|
 |22: `GPIO17 (SPI0 CS)`|`CS`|-|
 |24: `GPIO18 (SPI0 SCK)`|`SCK`, `T_CLK`|-|
@@ -38,7 +39,7 @@
 |32: `GPIO27`|`LED`|-|
 |34: `GPIO28`|`DC`|-|
 |36: `3.3V`|`VCC`|-|
-|38: `GND`|`GND`|`GND`|
+|38: `GND`|`GND`|-|
 |40: `VOUT`|-|`VIN`|
 
 ## How to Build
