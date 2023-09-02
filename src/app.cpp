@@ -603,7 +603,7 @@ static KeyboardView* keys[6];
 static SongListView* songList;
 static SeekbarView* seekbar;
 static Album* albums = (Album*)rom_songlist;
-static VGSDecoder vgs;
+static VGSDecoder vgs(16);
 
 void setup()
 {

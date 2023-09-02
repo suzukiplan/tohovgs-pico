@@ -79,6 +79,8 @@ class VGSDecoder
         int volumeRate;
     } ctx;
 
+    int masterVolume;
+
     inline void set_note(unsigned char cn, unsigned char t, unsigned char n)
     {
         ctx.ch[cn].tone = NULL;
@@ -180,10 +182,31 @@ class VGSDecoder
     }
 
   public:
+    VGSDecoder(int masterVolume = 100)
+    {
+        this->setMasterVolume(masterVolume);
+    }
+
+    void setMasterVolume(int masterVolume)
+    {
+        if (masterVolume < 0) {
+            masterVolume = 0;
+        } else if (100 < masterVolume) {
+            masterVolume = 100;
+        }
+        this->masterVolume = masterVolume;
+        this->ctx.volumeRate = this->masterVolume;
+    }
+
+    int getMasterVolume()
+    {
+        return this->masterVolume;
+    }
+
     bool load(const void* data, size_t size)
     {
         memset(&this->ctx, 0, sizeof(this->ctx));
-        this->ctx.volumeRate = 16;
+        this->ctx.volumeRate = this->masterVolume;
         for (int i = 0; i < 6; i++) {
             this->ctx.ch[i].volumeRate = 100;
         }
