@@ -732,8 +732,8 @@ void loop1()
     }
     if (4 <= i2s.availableForWrite()) {
         // streaming current buffer without blocking
-        i2s.write(buffer[page][index]);
-        i2s.write(buffer[page][index++]);
+        i2s.write16(buffer[page][index], buffer[page][index]);
+        index++;
         index &= VGS_BUFFER_SIZE - 1;
         needMove = 0 == index;
     } else if (!buffered) {
@@ -742,8 +742,8 @@ void loop1()
         buffered = true;
     } else {
         // streaming current buffer with blocking
-        i2s.write(buffer[page][index]);
-        i2s.write(buffer[page][index++]);
+        i2s.write16(buffer[page][index], buffer[page][index]);
+        index++;
         index &= VGS_BUFFER_SIZE - 1;
         needMove = 0 == index;
     }
