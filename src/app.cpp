@@ -731,7 +731,7 @@ void loop1()
         }
     }
     if (4 <= i2s.availableForWrite()) {
-        // streaming current buffer
+        // streaming current buffer without blocking
         i2s.write(buffer[page][index]);
         i2s.write(buffer[page][index++]);
         index &= VGS_BUFFER_SIZE - 1;
@@ -741,6 +741,10 @@ void loop1()
         vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
         buffered = true;
     } else {
-        delay(10);
-    }
+        // streaming current buffer with blocking
+        i2s.write(buffer[page][index]);
+        i2s.write(buffer[page][index++]);
+        index &= VGS_BUFFER_SIZE - 1;
+        needMove = 0 == index ? true : false;
+   }
 }
