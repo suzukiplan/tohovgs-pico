@@ -195,7 +195,7 @@ class VGSDecoder
         return this->ctx.play;
     }
 
-    bool execute(void* buffer, size_t size, bool stereo = false)
+    bool execute(void* buffer, size_t size)
     {
         if (!buffer) return false;
 
@@ -222,7 +222,7 @@ class VGSDecoder
         if (0 == ctx.mvol) {
             return false;
         }
-        for (int i = 0; i < (int)size; i += stereo ? 4 : 2, ctx.hz++) {
+        for (int i = 0; i < (int)size; i += 2, ctx.hz++) {
             for (int j = 0; j < 6; j++) {
                 if (ctx.ch[j].tone || ctx.ch[j].toneS) {
                     ctx.ch[j].cur %= ctx.ch[j].toneS[0];
@@ -261,10 +261,7 @@ class VGSDecoder
                             wav *= 100 - ctx.fade2;
                             wav /= 100;
                         }
-                        bp[0] = (short)wav;
-                        if (stereo) {
-                            bp[1] = bp[0];
-                        }
+                        *bp = (short)wav;
                         if (i) {
                             ctx.wav[j] += pw < 0 ? -pw : pw;
                             ctx.wav[j] >>= 1;
@@ -292,11 +289,7 @@ class VGSDecoder
                     wav = 32767;
                 else if (wav < -32768)
                     wav = -32768;
-                printf("bp=%d\n", wav);
-                bp[0] = (short)wav;
-                if (stereo) {
-                    bp[1] = bp[0];
-                }
+                *bp = (short)wav;
             }
             ctx.waitTime--;
             if (0 == ctx.waitTime) {
