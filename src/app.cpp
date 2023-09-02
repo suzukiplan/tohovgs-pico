@@ -718,9 +718,7 @@ void loop1()
     static int page = 0;
     static int index = 0;
     static bool buffered = false;
-    static bool needMove = false;
-    if (needMove) {
-        needMove = false;
+    if (0 == index) {
         page = 1 - page;
         if (buffered) {
             // skip buffering (already buffered)
@@ -729,12 +727,14 @@ void loop1()
             // buffering current page
             vgs.execute(buffer[page], VGS_BUFFER_SIZE * 2);
         }
+        // force streaming 1st sample
+        i2s.write16(buffer[page][index], buffer[page][index]);
+        index = 1;
     }
     if (4 <= i2s.availableForWrite()) {
         // streaming current buffer without blocking
         i2s.write16(buffer[page][index], buffer[page][index]);
         index = (index + 1) % VGS_BUFFER_SIZE;
-        needMove = 0 == index;
     } else if (!buffered) {
         // buffering next data
         vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
@@ -743,6 +743,5 @@ void loop1()
         // streaming current buffer with blocking
         i2s.write16(buffer[page][index], buffer[page][index]);
         index = (index + 1) % VGS_BUFFER_SIZE;
-        needMove = 0 == index;
     }
 }
