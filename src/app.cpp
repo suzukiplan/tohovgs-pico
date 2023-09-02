@@ -735,7 +735,7 @@ void loop1()
         i2s.write(buffer[page][index]);
         i2s.write(buffer[page][index++]);
         index &= VGS_BUFFER_SIZE - 1;
-        needMove = 0 == index ? true : false;
+        needMove = 0 == index;
     } else if (!buffered) {
         // buffering next data
         vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
@@ -745,6 +745,6 @@ void loop1()
         i2s.write(buffer[page][index]);
         i2s.write(buffer[page][index++]);
         index &= VGS_BUFFER_SIZE - 1;
-        needMove = 0 == index ? true : false;
-   }
+        needMove = 0 == index;
+    }
 }
