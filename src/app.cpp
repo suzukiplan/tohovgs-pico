@@ -336,6 +336,7 @@ class SongListView : public View
     bool isScroll;
     bool isSwipe;
     int pageMove;
+    int touchFrames;
 
     inline void transferSprite()
     {
@@ -518,6 +519,7 @@ class SongListView : public View
 
     void move()
     {
+        this->touchFrames++;
         if (this->pageMove && 0 == this->flingX) {
             int diff = 240 * 128 * this->pageMove - this->swipe;
             diff /= 3;
@@ -581,6 +583,7 @@ class SongListView : public View
         this->swipeTotal = 0;
         this->isScroll = false;
         this->isSwipe = false;
+        this->touchFrames = 0;
     }
 
     void onTouchMove(int tx, int ty) override
@@ -626,7 +629,7 @@ class SongListView : public View
     {
         if (this->pageMove) return;
 
-        if (abs(this->scrollTotal) < 128 && abs(this->swipeTotal) < 128) {
+        if (1 < this->touchFrames && abs(this->scrollTotal) < 512 && abs(this->swipeTotal) < 512) {
             this->flingY = 0;
             this->flingX = 0;
             auto tapped = this->hitCheck(&this->albums[this->albumPos], ty);
@@ -722,7 +725,7 @@ void setup()
     seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
-    delay(500);
+    delay(200);
     digitalWrite(25, LOW);
     setupCpu0End = true;
 }
@@ -762,7 +765,6 @@ void loop()
 
     // アニメーション対象Viewを再描画
     songList->move();
-    delay(20);
 }
 
 #define UDA1334A_PIN_DIN 13
