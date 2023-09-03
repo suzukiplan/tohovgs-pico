@@ -10,21 +10,32 @@
 - 同人ハードウェア版 東方BGM on VGS は基本的に、各自で部品を集めて組み立てる前提のオープンハードウェアです
 - _完成品の同人ショップでの委託版版もするかもしれません_
 
-## Required Parts
+## Required Parts and Tools
 
-- RaspberryPi Pico (SoC)
-- ILI9341 with Touch Module (LCD module)
-- UDA1334A (DAC module)
-- ブレッドボード
-- ジャンパー線♂♀ x 17本
-  - 内訳:
-    - LCD 接続 = 8本
-    - LCD タッチパネル接続 = 4本
-    - DAC 接続 = 5本
+### Parts
+
+__（国内で調達できない部品）__
+
+- [RP2040: Type-C 16MB (SoC module)](https://ja.aliexpress.com/item/1005004005660504.html)
+- [ILI9341: Module with Touch (LCD module)](https://ja.aliexpress.com/item/1005003005413104.html)
+- [UDA1334A (DAC module)](https://ja.aliexpress.com/item/1005001993192815.html)
+
+__（国内で調達可能な部品）__
+
+- [ブレッドボード](https://www.marutsu.co.jp/pc/i/14660/)
+- [ジャンパー線♂♀](https://www.marutsu.co.jp/pc/i/69682/) x 17本
+
+### Tools
+
+- ハンダゴテ
+- ハンダゴテ台
+- ハンダ
+
+> 上記の工具は、RP2040 と UDA1334A のピンヘッダを取り付けに必要です。
 
 ## PIN assign
 
-|RaspberryPi Pico (SoC)|ILI9341 (LCD)|UDA1334A (DAC)|
+|RP2040 (SoC)|ILI9341 (LCD)|UDA1334A (DAC)|
 |:-|:-|:-|
 |17: `GPIO13`|-|`DIN`|
 |18: `GND`|-|`GND`|
