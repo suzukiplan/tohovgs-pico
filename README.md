@@ -81,7 +81,7 @@ __（国内で調達可能な部品）__
 |38: `GND`|`GND`|-|
 |40: `VOUT (5V)`|-|`VIN`|
 
-## How to Build
+## Build Firmware
 
 ### Build Support OS
 
