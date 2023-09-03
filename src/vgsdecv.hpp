@@ -237,7 +237,9 @@ class VGSDecoder
             ctx.play = false;
             return false;
         }
-        ctx.waitTime = get_next_note();
+        if (0 == ctx.waitTime) {
+            ctx.waitTime = get_next_note();
+        }
         if (0 == ctx.waitTime) {
             ctx.play = false;
             return false;
