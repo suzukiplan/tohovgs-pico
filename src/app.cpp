@@ -10,6 +10,7 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <math.h>
+#include <pico/multicore.h>
 #include <pico/stdlib.h>
 
 #define REVERSE_SCREEN
@@ -167,6 +168,13 @@ class TopBoardView : public View
         this->render();
     }
 
+    void update(Song* song)
+    {
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        gfx->fillRect(4, 2, pos.w - 4, 12, COLOR_BG);
+        printKanji(this->gfx, 4, 2, "%s", song->name);
+    }
+
     void onTouchStart(int tx, int ty) override {}
     void onTouchMove(int tx, int ty) override {}
     void onTouchEnd(int tx, int ty) override {}
@@ -308,6 +316,7 @@ class SongListView : public View
 {
   private:
     Album* albums;
+    Song playingSong;
     int albumCount;
     int albumPos;
     TFT_eSprite* sprite;
@@ -333,6 +342,31 @@ class SongListView : public View
         this->gfx->startWrite();
         this->sprite->pushSprite(0, 0);
         this->gfx->endWrite();
+    }
+
+    Song* hitCheck(Album* album, int ty)
+    {
+        int y = this->scroll / 128;
+        y += 8;
+        y += 16;
+        y += 24;
+        for (int i = 0; i < 32; i++) {
+            auto song = &album->songs[i];
+            if (song->name[0]) {
+                if (y < -22) {
+                    y += 22;
+                } else if (pos.h <= y) {
+                    return nullptr;
+                } else {
+                    if (y < ty && ty < y + 20) {
+                        memcpy(&this->playingSong, song, sizeof(Song));
+                        return &this->playingSong;
+                    }
+                    y += 22;
+                }
+            }
+        }
+        return nullptr;
     }
 
     int renderContent(Album* album, int x, int y)
@@ -432,6 +466,8 @@ class SongListView : public View
         this->sprite->setColorDepth(16);
         this->render();
     }
+
+    void (*onTapSong)(Song* song);
 
     void resetVars()
     {
@@ -589,13 +625,24 @@ class SongListView : public View
     void onTouchEnd(int tx, int ty) override
     {
         if (this->pageMove) return;
-        this->flingY = this->lastMoveY;
-        this->flingX = this->lastMoveX;
+
+        if (abs(this->scrollTotal) < 128 && abs(this->swipeTotal) < 128) {
+            this->flingY = 0;
+            this->flingX = 0;
+            auto tapped = this->hitCheck(&this->albums[this->albumPos], ty);
+            if (tapped) {
+                this->onTapSong(tapped);
+            }
+        } else {
+            this->flingY = this->lastMoveY;
+            this->flingX = this->lastMoveX;
+        }
         this->correctOverscroll();
         this->correctPagePosition();
     }
 };
 
+static bool setupCpu0End = false;
 static TFT_eSPI gfx;
 static I2S i2s(OUTPUT);
 static TopBoardView* topBoard;
@@ -604,12 +651,30 @@ static SongListView* songList;
 static SeekbarView* seekbar;
 static Album* albums = (Album*)rom_songlist;
 static VGSDecoder vgs(16);
+static semaphore_t vgsSemaphore;
+
+inline void vgsLock() { sem_acquire_blocking(&vgsSemaphore); }
+inline void vgsUnlock() { sem_release(&vgsSemaphore); }
+
+void onTapSong(Song* song)
+{
+    if (song) {
+        topBoard->update(song);
+        digitalWrite(25, HIGH);
+        vgsLock();
+        vgs.load(&rom_bgm[song->bgmHead], song->bgmSize);
+        vgsUnlock();
+        delay(200);
+        digitalWrite(25, LOW);
+    }
+}
 
 void setup()
 {
     // 初期化中は本体LEDを点灯
     pinMode(25, OUTPUT);
     digitalWrite(25, HIGH);
+    sem_init(&vgsSemaphore, 1, 1);
 
     pinMode(TFT_BL, OUTPUT);
     digitalWrite(TFT_BL, HIGH);
@@ -653,11 +718,13 @@ void setup()
         keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
     }
     songList = new SongListView(&gfx, albums, sizeof(rom_songlist) / sizeof(Album), 105, 190);
+    songList->onTapSong = onTapSong;
     seekbar = new SeekbarView(&gfx, 320 - 24);
 
     gfx.endWrite();
     delay(500);
     digitalWrite(25, LOW);
+    setupCpu0End = true;
 }
 
 void loop()
@@ -705,12 +772,15 @@ void loop()
 
 void setup1()
 {
-    vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
+    while (!setupCpu0End) {
+        delay(1);
+    }
     i2s.setBCLK(UDA1334A_PIN_BCLK);
     i2s.setDATA(UDA1334A_PIN_DIN);
     i2s.setBitsPerSample(16);
     i2s.setBuffers(16, 128, 0); // 2048 bytes
     i2s.begin(22050);
+    // vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
 }
 
 void loop1()
@@ -721,7 +791,9 @@ void loop1()
     if (0 == index) {
         page = 1 - page;
     } else if (VGS_BUFFER_SIZE / 2 == index) {
+        vgsLock();
         vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
+        vgsUnlock();
     }
     i2s.write16(buffer[page][index], buffer[page][index]);
     index = (index + 1) % VGS_BUFFER_SIZE;
