@@ -23,6 +23,7 @@
 #define COLOR_BLACK 0x0000
 #define COLOR_GRAY 0b1000010000010000
 #define COLOR_GRAY_DARK 0b0100001000001000
+#define COLOR_PLAYING_SONG 0b0000000001100011
 #define COLOR_WHITE 0xFFFF
 
 static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
@@ -317,6 +318,8 @@ class SongListView : public View
   private:
     Album* albums;
     Song playingSong;
+    int playingAlbumIndex;
+    int playingSongIndex;
     int albumCount;
     int albumPos;
     TFT_eSprite* sprite;
@@ -361,6 +364,8 @@ class SongListView : public View
                 } else {
                     if (y < ty && ty < y + 20) {
                         memcpy(&this->playingSong, song, sizeof(Song));
+                        this->playingAlbumIndex = this->albumPos;
+                        this->playingSongIndex = i;
                         return &this->playingSong;
                     }
                     y += 22;
@@ -370,19 +375,19 @@ class SongListView : public View
         return nullptr;
     }
 
-    int renderContent(Album* album, int x, int y)
+    int renderContent(int ai, int x, int y)
     {
         y += 8;
         if (-12 < y) {
-            printKanji(this->sprite, x + 4, y, "%s", album->name);
+            printKanji(this->sprite, x + 4, y, "%s", this->albums[ai].name);
         }
         y += 16;
         if (-12 < y) {
-            printKanji(this->sprite, x + pos.w - strlen(album->copyright) * 4 - 4, y, "%s", album->copyright);
+            printKanji(this->sprite, x + pos.w - strlen(this->albums[ai].copyright) * 4 - 4, y, "%s", this->albums[ai].copyright);
         }
         y += 24;
         for (int i = 0; i < 32; i++) {
-            if (album->songs[i].name[0]) {
+            if (this->albums[ai].songs[i].name[0]) {
                 if (y < -22) {
                     y += 22;
                     continue;
@@ -394,12 +399,16 @@ class SongListView : public View
                         continue;
                     }
                 }
-                this->sprite->fillRect(x + 6, y, pos.w - 12, 20, album->color);
+                if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
+                    this->sprite->fillRect(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
+                } else {
+                    this->sprite->fillRect(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
+                }
                 this->sprite->drawFastVLine(x + 6, y, 20, COLOR_GRAY);
                 this->sprite->drawFastHLine(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
                 this->sprite->drawFastVLine(x + pos.w - 6, y, 20, COLOR_BLACK);
                 this->sprite->drawFastHLine(x + 6, y, pos.w - 12, COLOR_GRAY);
-                printKanji(this->sprite, x + 10, y + 4, "%s", album->songs[i].name);
+                printKanji(this->sprite, x + 10, y + 4, "%s", this->albums[ai].songs[i].name);
                 y += 22;
             }
         }
@@ -437,19 +446,19 @@ class SongListView : public View
         int y = this->scroll / 128;
         this->sprite->fillScreen(COLOR_LIST_BG);
         if (this->contentHeight) {
-            this->renderContent(&this->albums[this->albumPos], x, y);
+            this->renderContent(this->albumPos, x, y);
         } else {
-            this->contentHeight = this->renderContent(&this->albums[this->albumPos], x, y);
+            this->contentHeight = this->renderContent(this->albumPos, x, y);
             this->scrollBottom = (pos.h - this->contentHeight) * 128;
         }
         if (x < 0) {
             int pos = this->albumPos + 1;
             pos %= this->albumCount;
-            this->renderContent(&this->albums[pos], x + 240, 0);
+            this->renderContent(pos, x + 240, 0);
         } else if (0 < x) {
             int pos = this->albumPos - 1;
             if (pos < 0) pos = this->albumCount - 1;
-            this->renderContent(&this->albums[pos], x - 240, 0);
+            this->renderContent(pos, x - 240, 0);
         }
         this->transferSprite();
     }
@@ -465,6 +474,9 @@ class SongListView : public View
         this->sprite = new TFT_eSprite(gfx);
         this->sprite->createSprite(pos.w, pos.h);
         this->sprite->setColorDepth(16);
+        memset(&this->playingSong, 0, sizeof(this->playingSong));
+        this->playingAlbumIndex = -1;
+        this->playingSongIndex = -1;
         this->render();
     }
 
