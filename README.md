@@ -144,7 +144,7 @@ make build
 
 #### 細則2: 販売時の連絡
 
-これは強制ではないですが、可能な限り販売開始前に X (旧 Twitter) で [suzukiplan](https://twitter.com/suzukiplan) をフォローの上、以下のメンションを投げてください。
+これは強制ではないですが、可能な限り販売開始前または販売開始後に X (旧 Twitter) で [suzukiplan](https://twitter.com/suzukiplan) をフォローの上、以下のメンションを投げてください。
 
 ```
 @suzukiplan 東方VGS実機版の販売します
