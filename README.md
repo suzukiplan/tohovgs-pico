@@ -97,6 +97,8 @@ make build
 
 ## License
 
+### Software
+
 本プログラムのライセンスは [GPLv3](LICENSE.txt) とします。
 
 また、本プログラムでは以下の Open Source Software や素材を利用しています。
@@ -113,3 +115,7 @@ make build
 - 8×12 ドット日本語フォント「k8x12」
   - Web Site: [https://littlelimit.net/k8x12.htm](https://littlelimit.net/k8x12.htm)
   - License: [Original](./licenses-copy/k8x12.txt)
+
+### Hardware Sales
+
+（検討中）
