@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <map>
 
 #define NTYPE_ENV1 1
 #define NTYPE_ENV2 2
@@ -48,7 +49,11 @@ int main(int argc, char* argv[])
     }
 
     NOTE note;
+    std::map<int, int> indexMap;
+    int indexF = 0;
+    int indexV = 0;
     while (sizeof(NOTE) == fread(&note, 1, sizeof(NOTE), fpR)) {
+        indexMap[indexF] = indexV;
         if (note.type == NTYPE_WAIT) {
             if (note.val < 1) {
                 // ignore 0 or minus
@@ -57,25 +62,32 @@ int main(int argc, char* argv[])
                 fwrite(&op1, 1, 1, fpW);
                 unsigned char v8 = note.val & 0xFF;
                 fwrite(&v8, 1, 1, fpW);
+                indexV += 2;
             } else if (note.val < 65536) {
                 unsigned char op1 = NTYPE_WAIT_16 << 4;
                 fwrite(&op1, 1, 1, fpW);
                 unsigned short v16 = note.val & 0xFFFF;
                 fwrite(&v16, 2, 1, fpW);
+                indexV += 3;
             } else {
                 unsigned char op1 = NTYPE_WAIT_32 << 4;
                 fwrite(&op1, 1, 1, fpW);
                 fwrite(&note.val, 4, 1, fpW);
+                indexV += 5;
             }
+            indexF++;
             continue;
         }
         unsigned char op1 = note.type & 0x0F;
         op1 <<= 4;
         op1 |= note.op1 & 0x0F;
         fwrite(&op1, 1, 1, fpW);
+        indexV++;
         switch (note.type) {
             case NTYPE_JUMP: {
-                fwrite(&note.val, 4, 1, fpW);
+                int a = indexMap[note.val];
+                fwrite(&a, 4, 1, fpW);
+                indexV += 4;
                 break;
             }
             case NTYPE_ENV1:
@@ -83,17 +95,20 @@ int main(int argc, char* argv[])
             case NTYPE_PDOWN: {
                 short v16 = (short)note.val;
                 fwrite(&v16, 2, 1, fpW);
+                indexV += 2;
                 break;
             }
             case NTYPE_VOL:
             case NTYPE_MVOL: {
                 unsigned char v8 = note.val & 0xFF;
                 fwrite(&v8, 1, 1, fpW);
+                indexV++;
                 break;
             }
             case NTYPE_KEYON: {
                 fwrite(&note.op2, 1, 1, fpW);
                 fwrite(&note.op3, 1, 1, fpW);
+                indexV += 2;
                 break;
             }
             case NTYPE_KEYOFF:
@@ -104,6 +119,7 @@ int main(int argc, char* argv[])
                 printf("detect invalid type (%d)\n", note.type);
                 exit(-1);
         }
+        indexF++;
     }
 
     fclose(fpR);
