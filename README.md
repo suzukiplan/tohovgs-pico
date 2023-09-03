@@ -147,7 +147,7 @@ make build
 これは強制ではないですが、可能な限り販売開始前に X (旧 Twitter) で [suzukiplan](https://twitter.com/suzukiplan) をフォローの上、以下のメンションを投げてください。
 
 ```
-@suzukiplan 東方VGS実機版の販売をさせていただきます。
+@suzukiplan 東方VGS実機版の販売します
 販売リンク: https://example.com/1234
 ```
 
