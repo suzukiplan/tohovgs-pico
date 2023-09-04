@@ -24,6 +24,7 @@
 #define COLOR_GRAY 0b1000010000010000
 #define COLOR_GRAY_DARK 0b0100001000001000
 #define COLOR_PLAYING_SONG 0b0000000001100011
+#define COLOR_RED 0xF800
 #define COLOR_WHITE 0xFFFF
 
 static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
@@ -184,29 +185,47 @@ class TopBoardView : public View
 class KeyboardView : public View
 {
   private:
-    int key;
+    uint8_t key;
+    uint8_t tone;
+
+    static constexpr bool isBlackKey[12] = {
+        false, true, false, false, true, false, true, false, false, true, false, true};
+
+    static constexpr int keyX[12] = {
+        0, 2, 4, 8, 10, 12, 14, 16, 20, 22, 24, 26};
+
+    inline void renderKey(uint8_t key, bool red = false)
+    {
+        if (85 <= key) return;
+        int mod12 = key % 12;
+        if (isBlackKey[mod12]) {
+            this->gfx->fillRect(32 + keyX[mod12] + key / 12 * 28, 0, 3, 7, red ? COLOR_RED : COLOR_BLACK);
+        } else {
+            this->gfx->fillRect(32 + keyX[mod12] + key / 12 * 28, 0, 3, 9, red ? COLOR_RED : COLOR_WHITE);
+            if (0 < key) {
+                unsigned char left = key - 1;
+                mod12 = left % 12;
+                if (isBlackKey[mod12]) {
+                    this->gfx->fillRect(32 + keyX[mod12] + left / 12 * 28, 0, 3, 7, COLOR_BLACK);
+                }
+            }
+            if (key < 84) {
+                unsigned char right = key + 1;
+                mod12 = right % 12;
+                if (isBlackKey[mod12]) {
+                    this->gfx->fillRect(32 + keyX[mod12] + right / 12 * 28, 0, 3, 7, COLOR_BLACK);
+                }
+            }
+        }
+    }
 
     void render(int ch)
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->gfx->fillRect(0, 0, this->pos.w, this->pos.h, COLOR_BG);
-        // チャネル名と楽器を描画
         printSmallFont(this->gfx, 0, 0, "CH%d TRI ", ch);
-        // 白鍵を描画
-        for (int i = 0; i < 50; i++) {
-            this->gfx->fillRect(32 + i * 4, 0, 3, 9, COLOR_WHITE);
-        }
-        // 黒鍵を描画
-        for (int i = 0; i < 49; i++) {
-            switch (i % 7) {
-                case 0:
-                case 2:
-                case 3:
-                case 5:
-                case 6:
-                    this->gfx->fillRect(32 + i * 4 + 2, 0, 3, 7, COLOR_BLACK);
-                    break;
-            }
+        for (uint8_t i = 0; i < 85; i++) {
+            this->renderKey(i);
         }
     }
 
@@ -214,8 +233,37 @@ class KeyboardView : public View
     KeyboardView(TFT_eSPI* gfx, int ch, int x, int y)
     {
         init(gfx, x, y, 232, 10);
-        this->key = -1;
+        this->key = 0xFF;
+        this->tone = 0;
         render(ch);
+    }
+
+    void update(uint8_t tone, uint8_t key)
+    {
+        if (key == this->key && tone == this->tone) {
+            return;
+        }
+        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        if (key != this->key) {
+            // 現在の描画位置を元に戻す
+            if (this->key != 0xFF) {
+                this->renderKey(this->key);
+            }
+            // 新しい位置に描画
+            this->key = key;
+            if (this->key != 0xFF) {
+                this->renderKey(this->key, true);
+            }
+        }
+        if (tone != this->tone) {
+            this->tone = tone;
+            switch (tone) {
+                case 0: printSmallFont(this->gfx, 16, 0, "TRI"); break;
+                case 1: printSmallFont(this->gfx, 16, 0, "SAW"); break;
+                case 2: printSmallFont(this->gfx, 16, 0, "SQ "); break;
+                default: printSmallFont(this->gfx, 16, 0, "NOZ"); break;
+            }
+        }
     }
 
     void onTouchStart(int tx, int ty) override {}
@@ -777,6 +825,9 @@ void loop()
 
     // アニメーション対象Viewを再描画
     songList->move();
+    for (int i = 0; i < 6; i++) {
+        keys[i]->update(vgs.getTone(i), vgs.getKey(i));
+    }
 }
 
 #define UDA1334A_PIN_DIN 13

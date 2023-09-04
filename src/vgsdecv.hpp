@@ -369,6 +369,9 @@ class VGSDecoder
         }
     }
 
+    inline unsigned char getTone(unsigned char cn) { return ctx.ch[cn].toneT; }
+    inline unsigned char getKey(unsigned char cn) { return ctx.ch[cn].keyOn || ctx.ch[cn].count < ctx.ch[cn].env2 ? ctx.ch[cn].toneK : 0xFF; }
+
     unsigned int getLengthTime()
     {
         return bgm.lengthTime;
