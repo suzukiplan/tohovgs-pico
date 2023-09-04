@@ -36,6 +36,8 @@ class VGSDecoder
     struct BGM {
         unsigned char data[108 * 1024];
         int size;
+        unsigned int lengthTime;
+        unsigned int loopTime;
     } bgm;
 
     struct Channel {
@@ -185,6 +187,7 @@ class VGSDecoder
     VGSDecoder(int masterVolume = 100)
     {
         this->setMasterVolume(masterVolume);
+        memset(&this->bgm, 0, sizeof(this->bgm));
     }
 
     void setMasterVolume(int masterVolume)
@@ -214,7 +217,19 @@ class VGSDecoder
                                              (char*)this->bgm.data,
                                              (int)size,
                                              (int)sizeof(this->bgm.data));
-        this->ctx.play = 0 < this->bgm.size;
+        if (16 < this->bgm.size && 0 == memcmp(this->bgm.data, "VGSDEC-V", 8)) {
+            memcpy(&this->bgm.lengthTime, &this->bgm.data[8], 4);
+            memcpy(&this->bgm.loopTime, &this->bgm.data[12], 4);
+            memmove(this->bgm.data, this->bgm.data + 16, this->bgm.size - 16);
+            this->bgm.size -= 16;
+            this->ctx.play = true;
+        } else {
+            this->ctx.play = false;
+            this->bgm.size = 0;
+            this->bgm.lengthTime = 0;
+            this->bgm.loopTime = 0;
+            memset(this->bgm.data, 0, sizeof(this->bgm.data));
+        }
         return this->ctx.play;
     }
 
@@ -352,5 +367,15 @@ class VGSDecoder
         if (0 == ctx.fade2) {
             ctx.fade2 = 1;
         }
+    }
+
+    unsigned int getLengthTime()
+    {
+        return bgm.lengthTime;
+    }
+
+    unsigned int getLoopTime()
+    {
+        return bgm.loopTime;
     }
 };
