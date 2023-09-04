@@ -217,7 +217,7 @@ class VGSDecoder
                                              (char*)this->bgm.data,
                                              (int)size,
                                              (int)sizeof(this->bgm.data));
-        if (16 < this->bgm.size && 0 == memcmp(this->bgm.data, "VGSDEC-V", 8)) {
+        if (16 < this->bgm.size && 0 == memcmp(this->bgm.data, "VGSBGM-V", 8)) {
             memcpy(&this->bgm.lengthTime, &this->bgm.data[8], 4);
             memcpy(&this->bgm.loopTime, &this->bgm.data[12], 4);
             memmove(this->bgm.data, this->bgm.data + 16, this->bgm.size - 16);
