@@ -25,6 +25,23 @@ all:
 clean:
 	rm -f *.o
 	rm -f app
+	rm -f ../src/rom_*.c
+	rm -f ../rom/bgm.dat
+	rm -f ../rom/songlist_sjis.dat
+	rm -f ../rom/songlist_utf8.dat
+	rm -f ../rom/songlist.bin
+	rm -f ../rom/*.bgm
+	rm -f ../BGM.mak
+	rm -f ../tools/bin2var/bin2var
+	rm -f ../tools/bmp2img/bmp2img
+	rm -f ../tools/bplay/bplay
+	rm -f ../tools/sldcnv/sldcnv
+	rm -f ../tools/sldmak/sldmak
+	rm -f ../tools/sljcnv/sljcnv
+	rm -f ../tools/varext/varext
+	rm -f ../tools/vgsftv/vgsftv
+	rm -f ../tools/vgslz4/vgslz4
+	rm -f ../tools/vgsmml/vgsmml
 
 vgssdk_sdl2.o: src/vgssdk_sdl2.cpp ${HEADERS}
 	${CPP} src/vgssdk_sdl2.cpp
