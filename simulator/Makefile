@@ -22,6 +22,10 @@ all:
 	make ${OBJECTS}
 	@echo TODO: link objects
 
+clean:
+	rm -f *.o
+	rm -f app
+
 vgssdk_sdl2.o: src/vgssdk_sdl2.cpp ${HEADERS}
 	${CPP} src/vgssdk_sdl2.cpp
 
