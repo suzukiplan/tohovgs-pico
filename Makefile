@@ -31,7 +31,7 @@ roms:
 	make -f BGM.mak all
 	make rom/songlist_sjis.dat
 	make rom/songlist.bin
-	make include/roms.hpp
+	make src/roms.hpp
 
 src/rom_small_font.c: rom/small_font.bmp
 	tools/bmp2img/bmp2img -t 4x8 rom/small_font.bmp >src/rom_small_font.c
@@ -57,8 +57,8 @@ src/rom_songlist.c: rom/songlist.bin
 src/rom_bgm.c: rom/bgm.dat
 	tools/bin2var/bin2var rom/bgm.dat >src/rom_bgm.c
 
-include/roms.hpp: ${ROMS}
-	tools/varext/varext ${ROMS} >include/roms.hpp
+src/roms.hpp: ${ROMS}
+	tools/varext/varext ${ROMS} >src/roms.hpp
 
 format: 
 	make execute-format FILENAME=./src/app.cpp

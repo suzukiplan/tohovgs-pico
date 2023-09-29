@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include "../../include/model.h"
+#include "../../src/model.h"
 
 int get_bgm_size(std::string mml)
 {
