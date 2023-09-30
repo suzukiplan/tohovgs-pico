@@ -4,7 +4,7 @@ PC (macOS or Linux) で東方VGS実機版の動作をシミュレートします
 
 |macOS|Linux|
 |:-:|:-:|
-|(TODO)||![linux.png](./linux.png)|
+|![macos.png](macos.png)|![linux.png](./linux.png)|
 
 ## Build and Execute
 
