@@ -84,7 +84,7 @@ VGS::GFX::GFX()
 
 VGS::GFX::GFX(int width, int height)
 {
-    log("create GFX for Virtual Display (%d, %d) = %dKB", width, height, width * height * 2 / 1024 + (width * height * 2 % 1024 ? 1 :0));
+    log("create GFX for Virtual Display (%d, %d) = %dKB", width, height, width * height * 2 / 1024 + (width * height * 2 % 1024 ? 1 : 0));
     this->counter = 0;
     this->vDisplay.width = width;
     this->vDisplay.height = height;
