@@ -711,7 +711,6 @@ void onTapSong(Song* song)
         topBoard->update(song);
         vgs.led(true);
         vgs.bgm.load(&rom_bgm[song->bgmHead], song->bgmSize);
-        vgs.delay(200);
         vgs.led(false);
     }
 }
