@@ -359,6 +359,19 @@ class SeekbarView : public View
     {
         this->movingProgress = false;
     }
+
+    void update(int max, int progress) 
+    {
+        if (this->movingProgress) {
+            return;
+        } else {
+            gfx->startWrite();
+            gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+            this->renderProgress(max, progress);
+            this->renderDuration(progress / 22050);
+            gfx->endWrite();
+        }
+    }
 };
 
 class SongListView : public View
@@ -511,6 +524,14 @@ class SongListView : public View
         this->transferSprite();
     }
 
+    void play(int ai, int si)
+    {
+        memcpy(&this->playingSong, &this->albums[ai].songs[si], sizeof(this->playingSong));
+        this->playingAlbumIndex = ai;
+        this->playingSongIndex = si;
+        this->onTapSong(&this->playingSong);
+    }
+
   public:
     SongListView(TFT_eSPI* gfx, Album* albums, int albumCount, int y, int h)
     {
@@ -529,6 +550,31 @@ class SongListView : public View
     }
 
     void (*onTapSong)(Song* song);
+
+    void playNextSong()
+    {
+        auto album = &this->albums[this->playingAlbumIndex];
+        int nextSongIndex;
+        for (nextSongIndex = this->playingSongIndex + 1; nextSongIndex < 32; nextSongIndex++) {
+            if (album->songs[nextSongIndex].name[0]) {
+                break;
+            }
+        }
+        if (nextSongIndex < 32) {
+            // 現在のアルバムの次の曲を演奏
+            this->play(this->playingAlbumIndex, nextSongIndex);
+        } else {
+            // 次のアルバムの先頭の曲を演奏
+            int nextAlbumIndex = this->playingAlbumIndex + 1;
+            nextAlbumIndex %= this->albumCount;
+            for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
+                if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
+                    this->play(nextAlbumIndex, nextSongIndex);
+                    break;
+                }
+            }
+        }
+    }
 
     void resetVars()
     {
@@ -828,6 +874,10 @@ void loop()
     for (int i = 0; i < 6; i++) {
         keys[i]->update(vgs.getTone(i), vgs.getKey(i));
     }
+    if (vgs.isPlayEnd()) {
+        songList->playNextSong();
+    }
+    seekbar->update(vgs.getLengthTime(), vgs.getDurationTime());
 }
 
 #define UDA1334A_PIN_DIN 13
@@ -859,6 +909,9 @@ void loop1()
         vgsLock();
         vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
         vgsUnlock();
+        if (0 < vgs.getLoopCount()) {
+            vgs.fadeout();
+        }
     }
     i2s.write16(buffer[page][index], buffer[page][index]);
     index = (index + 1) % VGS_BUFFER_SIZE;
