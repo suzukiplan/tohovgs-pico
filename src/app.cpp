@@ -5,15 +5,14 @@
 
 #include "model.h"
 #include "roms.hpp"
-#include "vgsdecv.hpp"
-#include <I2S.h>
-#include <SPI.h>
-#include <TFT_eSPI.h>
-#include <math.h>
-#include <pico/multicore.h>
-#include <pico/stdlib.h>
+#include "vgssdk.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define REVERSE_SCREEN
+extern VGS vgs;
+#define abs(x) (x < 0 ? -x : x)
 
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
@@ -27,7 +26,7 @@
 #define COLOR_RED 0xF800
 #define COLOR_WHITE 0xFFFF
 
-static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
+static void printSmallFont(VGS::GFX* gfx, int x, int y, const char* format, ...)
 {
     char buf[64];
     va_list args;
@@ -36,15 +35,15 @@ static void printSmallFont(TFT_eSPI* gfx, int x, int y, const char* format, ...)
     va_end(args);
     for (int i = 0; buf[i] && i < 64; i++, x += 4) {
         if ('0' <= buf[i] && buf[i] <= '9') {
-            gfx->pushImage(x, y, 4, 8, &rom_small_font[(buf[i] - '0') * 32]);
+            gfx->image(x, y, 4, 8, &rom_small_font[(buf[i] - '0') * 32]);
         } else if ('A' <= buf[i] && buf[i] <= 'Z') {
-            gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + (buf[i] - 'A') * 32]);
+            gfx->image(x, y, 4, 8, &rom_small_font[320 + (buf[i] - 'A') * 32]);
         } else if (' ' == buf[i]) {
-            gfx->fillRect(x, y, 4, 8, COLOR_BG);
+            gfx->boxf(x, y, 4, 8, COLOR_BG);
         } else if ('.' == buf[i]) {
-            gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + 832]);
+            gfx->image(x, y, 4, 8, &rom_small_font[320 + 832]);
         } else if (':' == buf[i]) {
-            gfx->pushImage(x, y, 4, 8, &rom_small_font[320 + 832 + 32]);
+            gfx->image(x, y, 4, 8, &rom_small_font[320 + 832 + 32]);
         }
     }
 }
@@ -76,7 +75,7 @@ static inline unsigned short sjis2jis(const unsigned char* sjis)
     return ret;
 }
 
-static void printKanji(TFT_eSPI* gfx, int x, int y, const char* format, ...)
+static void printKanji(VGS::GFX* gfx, int x, int y, const char* format, ...)
 {
     static unsigned char bit[8] = {
         0b10000000,
@@ -104,7 +103,7 @@ static void printKanji(TFT_eSPI* gfx, int x, int y, const char* format, ...)
                 for (int yy = 0; yy < 12; yy++) {
                     for (int xx = 0; xx < 8; xx++) {
                         if (rom_k8x12S_jisx0208[jis + yy] & bit[xx]) {
-                            gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+                            gfx->pixel(x + xx, y + yy, COLOR_WHITE);
                         }
                     }
                 }
@@ -116,7 +115,7 @@ static void printKanji(TFT_eSPI* gfx, int x, int y, const char* format, ...)
                 for (int yy = 0; yy < 12; yy++) {
                     for (int xx = 0; xx < 4; xx++) {
                         if (rom_k8x12S_jisx0201[jis + yy] & bit[xx]) {
-                            gfx->drawPixel(x + xx, y + yy, COLOR_WHITE);
+                            gfx->pixel(x + xx, y + yy, COLOR_WHITE);
                         }
                     }
                 }
@@ -135,10 +134,10 @@ typedef struct Position_ {
 class View
 {
   public:
-    TFT_eSPI* gfx;
+    VGS::GFX* gfx;
     Position pos;
 
-    void init(TFT_eSPI* gfx, int x, int y, int w, int h)
+    void init(VGS::GFX* gfx, int x, int y, int w, int h)
     {
         this->gfx = gfx;
         pos.x = x;
@@ -147,9 +146,9 @@ class View
         pos.h = h;
     }
 
-    virtual void onTouchStart(int tx, int ty);
-    virtual void onTouchMove(int tx, int ty);
-    virtual void onTouchEnd(int tx, int ty);
+    virtual void onTouchStart(int tx, int ty) = 0;
+    virtual void onTouchMove(int tx, int ty) = 0;
+    virtual void onTouchEnd(int tx, int ty) = 0;
 };
 
 class TopBoardView : public View
@@ -157,14 +156,14 @@ class TopBoardView : public View
   private:
     void render()
     {
-        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         printSmallFont(this->gfx, 4, 4, "SONG NOT SELECTED");
         printSmallFont(this->gfx, 4, 16, "INDEX     00000  PLAYING 0 OF 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
     }
 
   public:
-    TopBoardView(TFT_eSPI* gfx, int y)
+    TopBoardView(VGS::GFX* gfx, int y)
     {
         init(gfx, 0, y, 240, 32);
         this->render();
@@ -172,8 +171,8 @@ class TopBoardView : public View
 
     void update(Song* song)
     {
-        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        gfx->fillRect(4, 2, pos.w - 4, 12, COLOR_BG);
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->gfx->boxf(4, 2, pos.w - 4, 12, COLOR_BG);
         printKanji(this->gfx, 4, 2, "%s", song->name);
     }
 
@@ -182,38 +181,35 @@ class TopBoardView : public View
     void onTouchEnd(int tx, int ty) override {}
 };
 
+static const bool isBlackKey[12] = {false, true, false, false, true, false, true, false, false, true, false, true};
+static const int keyX[12] = {0, 2, 4, 8, 10, 12, 14, 16, 20, 22, 24, 26};
+
 class KeyboardView : public View
 {
   private:
-    uint8_t key;
-    uint8_t tone;
+    unsigned char key;
+    unsigned char tone;
 
-    static constexpr bool isBlackKey[12] = {
-        false, true, false, false, true, false, true, false, false, true, false, true};
-
-    static constexpr int keyX[12] = {
-        0, 2, 4, 8, 10, 12, 14, 16, 20, 22, 24, 26};
-
-    inline void renderKey(uint8_t key, bool red = false)
+    inline void renderKey(unsigned char key, bool red = false)
     {
         if (85 <= key) return;
         int mod12 = key % 12;
         if (isBlackKey[mod12]) {
-            this->gfx->fillRect(32 + keyX[mod12] + key / 12 * 28, 0, 3, 7, red ? COLOR_RED : COLOR_BLACK);
+            this->gfx->boxf(32 + keyX[mod12] + key / 12 * 28, 0, 3, 7, red ? COLOR_RED : COLOR_BLACK);
         } else {
-            this->gfx->fillRect(32 + keyX[mod12] + key / 12 * 28, 0, 3, 9, red ? COLOR_RED : COLOR_WHITE);
+            this->gfx->boxf(32 + keyX[mod12] + key / 12 * 28, 0, 3, 9, red ? COLOR_RED : COLOR_WHITE);
             if (0 < key) {
                 unsigned char left = key - 1;
                 mod12 = left % 12;
                 if (isBlackKey[mod12]) {
-                    this->gfx->fillRect(32 + keyX[mod12] + left / 12 * 28, 0, 3, 7, COLOR_BLACK);
+                    this->gfx->boxf(32 + keyX[mod12] + left / 12 * 28, 0, 3, 7, COLOR_BLACK);
                 }
             }
             if (key < 84) {
                 unsigned char right = key + 1;
                 mod12 = right % 12;
                 if (isBlackKey[mod12]) {
-                    this->gfx->fillRect(32 + keyX[mod12] + right / 12 * 28, 0, 3, 7, COLOR_BLACK);
+                    this->gfx->boxf(32 + keyX[mod12] + right / 12 * 28, 0, 3, 7, COLOR_BLACK);
                 }
             }
         }
@@ -221,16 +217,16 @@ class KeyboardView : public View
 
     void render(int ch)
     {
-        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        this->gfx->fillRect(0, 0, this->pos.w, this->pos.h, COLOR_BG);
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->gfx->boxf(0, 0, this->pos.w, this->pos.h, COLOR_BG);
         printSmallFont(this->gfx, 0, 0, "CH%d TRI ", ch);
-        for (uint8_t i = 0; i < 85; i++) {
+        for (unsigned char i = 0; i < 85; i++) {
             this->renderKey(i);
         }
     }
 
   public:
-    KeyboardView(TFT_eSPI* gfx, int ch, int x, int y)
+    KeyboardView(VGS::GFX* gfx, int ch, int x, int y)
     {
         init(gfx, x, y, 232, 10);
         this->key = 0xFF;
@@ -238,12 +234,12 @@ class KeyboardView : public View
         render(ch);
     }
 
-    void update(uint8_t tone, uint8_t key)
+    void update(unsigned char tone, unsigned char key)
     {
         if (key == this->key && tone == this->tone) {
             return;
         }
-        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         if (key != this->key) {
             // 現在の描画位置を元に戻す
             if (this->key != 0xFF) {
@@ -278,8 +274,8 @@ class SeekbarView : public View
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        this->gfx->drawLine(204, 0, 204, this->pos.h, COLOR_GRAY);
-        this->gfx->drawLine(0, 0, 240, 0, COLOR_GRAY);
+        this->gfx->line(204, 0, 204, this->pos.h, COLOR_GRAY);
+        this->gfx->line(0, 0, 240, 0, COLOR_GRAY);
         this->renderDuration(0);
         this->renderProgress(100, 0);
     }
@@ -296,26 +292,26 @@ class SeekbarView : public View
         progress *= 164;
         progress /= 100;
         if (160 < progress) progress = 160;
-        this->gfx->fillRect(32 + progress, 3, 4, this->pos.h - 6, COLOR_WHITE);
+        this->gfx->boxf(32 + progress, 3, 4, this->pos.h - 6, COLOR_WHITE);
         if (progress < 160) {
             p.x = 32 + progress + 4;
             p.y = (this->pos.h - 2) / 2;
             p.w = 160 - progress;
             p.h = 1;
-            this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
-            this->gfx->fillRect(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
-            this->gfx->fillRect(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
-            this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->boxf(p.x, p.y, p.w, p.h, COLOR_GRAY);
+            this->gfx->boxf(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
+            this->gfx->boxf(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->boxf(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
         }
         if (0 < progress) {
             p.x = 32;
             p.y = (this->pos.h - 2) / 2;
             p.w = progress;
             p.h = 1;
-            this->gfx->fillRect(p.x, p.y, p.w, p.h, COLOR_GRAY);
-            this->gfx->fillRect(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
-            this->gfx->fillRect(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
-            this->gfx->fillRect(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->boxf(p.x, p.y, p.w, p.h, COLOR_GRAY);
+            this->gfx->boxf(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
+            this->gfx->boxf(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
+            this->gfx->boxf(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
         }
     }
 
@@ -333,7 +329,7 @@ class SeekbarView : public View
     }
 
   public:
-    SeekbarView(TFT_eSPI* gfx, int y)
+    SeekbarView(VGS::GFX* gfx, int y)
     {
         init(gfx, 0, y, 240, 24);
         this->movingProgress = false;
@@ -370,7 +366,7 @@ class SongListView : public View
     int playingSongIndex;
     int albumCount;
     int albumPos;
-    TFT_eSprite* sprite;
+    VGS::GFX* sprite;
     int scroll;
     int scrollTarget;
     int scrollBottom;
@@ -392,7 +388,7 @@ class SongListView : public View
     inline void transferSprite()
     {
         this->gfx->startWrite();
-        this->sprite->pushSprite(0, 0);
+        this->sprite->push(0, 0);
         this->gfx->endWrite();
     }
 
@@ -448,14 +444,14 @@ class SongListView : public View
                     }
                 }
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
-                    this->sprite->fillRect(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
+                    this->sprite->boxf(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
                 } else {
-                    this->sprite->fillRect(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
+                    this->sprite->boxf(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
                 }
-                this->sprite->drawFastVLine(x + 6, y, 20, COLOR_GRAY);
-                this->sprite->drawFastHLine(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
-                this->sprite->drawFastVLine(x + pos.w - 6, y, 20, COLOR_BLACK);
-                this->sprite->drawFastHLine(x + 6, y, pos.w - 12, COLOR_GRAY);
+                this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
+                this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
+                this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
+                this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
                 printKanji(this->sprite, x + 10, y + 4, "%s", this->albums[ai].songs[i].name);
                 y += 22;
             }
@@ -492,7 +488,7 @@ class SongListView : public View
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         int x = this->swipe / 128;
         int y = this->scroll / 128;
-        this->sprite->fillScreen(COLOR_LIST_BG);
+        this->sprite->clear(COLOR_LIST_BG);
         if (this->contentHeight) {
             this->renderContent(this->albumPos, x, y);
         } else {
@@ -512,16 +508,14 @@ class SongListView : public View
     }
 
   public:
-    SongListView(TFT_eSPI* gfx, Album* albums, int albumCount, int y, int h)
+    SongListView(VGS::GFX* gfx, Album* albums, int albumCount, int y, int h)
     {
         this->albums = albums;
         this->albumCount = albumCount;
         this->albumPos = 0;
         this->resetVars();
         init(gfx, 0, y, 240, h);
-        this->sprite = new TFT_eSprite(gfx);
-        this->sprite->createSprite(pos.w, pos.h);
-        this->sprite->setColorDepth(16);
+        this->sprite = new VGS::GFX(pos.w, pos.h);
         memset(&this->playingSong, 0, sizeof(this->playingSong));
         this->playingAlbumIndex = -1;
         this->playingSongIndex = -1;
@@ -705,161 +699,78 @@ class SongListView : public View
     }
 };
 
-static bool setupCpu0End = false;
-static TFT_eSPI gfx;
-static I2S i2s(OUTPUT);
 static TopBoardView* topBoard;
 static KeyboardView* keys[6];
 static SongListView* songList;
 static SeekbarView* seekbar;
 static Album* albums = (Album*)rom_songlist;
-static VGSDecoder vgs(16);
-static semaphore_t vgsSemaphore;
-
-inline void vgsLock() { sem_acquire_blocking(&vgsSemaphore); }
-inline void vgsUnlock() { sem_release(&vgsSemaphore); }
 
 void onTapSong(Song* song)
 {
     if (song) {
         topBoard->update(song);
-        digitalWrite(25, HIGH);
-        vgsLock();
-        vgs.load(&rom_bgm[song->bgmHead], song->bgmSize);
-        vgsUnlock();
-        delay(200);
-        digitalWrite(25, LOW);
+        vgs.led(true);
+        vgs.bgm.load(&rom_bgm[song->bgmHead], song->bgmSize);
+        vgs.led(false);
     }
 }
 
-void setup()
+extern "C" void vgs_setup()
 {
-    // 初期化中は本体LEDを点灯
-    pinMode(25, OUTPUT);
-    digitalWrite(25, HIGH);
-    sem_init(&vgsSemaphore, 1, 1);
-
-    pinMode(TFT_BL, OUTPUT);
-    digitalWrite(TFT_BL, HIGH);
-
-    // ディスプレイを初期化
-    gfx.init();
-    gfx.startWrite();
-
-    // ディスプレイの向きを初期化
-#ifdef REVERSE_SCREEN
-    gfx.setRotation(2);
-    uint16_t touch[] = {
-        300,
-        3600,
-        300,
-        3600,
-        0b010};
-    gfx.setTouch(touch);
-#else
-    gfx.setRotation(0);
-    uint16_t touch[] = {
-        300,
-        3600,
-        300,
-        3600,
-        0b100};
-    gfx.setTouch(touch);
-#endif
-
-    gfx.fillScreen(COLOR_BG);
+    vgs.gfx.startWrite();
+    vgs.gfx.clear(COLOR_BG);
 
     // ガイドラインを描画
-    gfx.drawLine(0, 34, 240, 34, COLOR_GRAY);
-    gfx.drawLine(0, 36, 240, 36, COLOR_WHITE);
-    gfx.drawLine(0, 101, 240, 101, COLOR_WHITE);
-    gfx.drawLine(0, 103, 240, 103, COLOR_GRAY);
+    vgs.gfx.line(0, 34, 240, 34, COLOR_GRAY);
+    vgs.gfx.line(0, 36, 240, 36, COLOR_WHITE);
+    vgs.gfx.line(0, 101, 240, 101, COLOR_WHITE);
+    vgs.gfx.line(0, 103, 240, 103, COLOR_GRAY);
 
     // Viewを初期化
-    topBoard = new TopBoardView(&gfx, 0);
+    topBoard = new TopBoardView(&vgs.gfx, 0);
     for (int i = 0; i < 6; i++) {
-        keys[i] = new KeyboardView(&gfx, i, 4, 40 + i * 10);
+        keys[i] = new KeyboardView(&vgs.gfx, i, 4, 40 + i * 10);
     }
-    songList = new SongListView(&gfx, albums, sizeof(rom_songlist) / sizeof(Album), 105, 190);
+    songList = new SongListView(&vgs.gfx, albums, sizeof(rom_songlist) / sizeof(Album), 105, 190);
     songList->onTapSong = onTapSong;
-    seekbar = new SeekbarView(&gfx, 320 - 24);
+    seekbar = new SeekbarView(&vgs.gfx, 320 - 24);
 
-    gfx.endWrite();
-    delay(200);
-    digitalWrite(25, LOW);
-    setupCpu0End = true;
+    vgs.gfx.endWrite();
 }
 
-void loop()
+extern "C" void vgs_loop()
 {
     // タッチイベントを対象Viewへ配送
     static View* touchingView = nullptr;
     static bool prevTouched = false;
-    static uint16_t prevTouchX = 0;
-    static uint16_t prevTouchY = 0;
-    uint16_t touchX;
-    uint16_t touchY;
-    bool touched = gfx.getTouch(&touchX, &touchY, 20);
-    if (prevTouched && touched && touchingView) {
-        if (touchX != prevTouchX || touchY != prevTouchY) {
-            touchingView->onTouchMove(touchX - touchingView->pos.x, touchY - touchingView->pos.y);
+    static int prevTouchX = 0;
+    static int prevTouchY = 0;
+    if (prevTouched && vgs.io.touch.on && touchingView) {
+        if (vgs.io.touch.x != prevTouchX || vgs.io.touch.y != prevTouchY) {
+            touchingView->onTouchMove(vgs.io.touch.x - touchingView->pos.x, vgs.io.touch.y - touchingView->pos.y);
         }
-    } else if (!prevTouched && touched) {
-        if (seekbar->pos.y <= touchY) {
+    } else if (!prevTouched && vgs.io.touch.on) {
+        if (seekbar->pos.y <= vgs.io.touch.y) {
             touchingView = seekbar;
         } else {
             touchingView = songList;
         }
         if (touchingView) {
-            touchingView->onTouchStart(touchX - touchingView->pos.x, touchY - touchingView->pos.y);
+            touchingView->onTouchStart(vgs.io.touch.x - touchingView->pos.x, vgs.io.touch.y - touchingView->pos.y);
         }
-    } else if (!touched && prevTouched && touchingView) {
+    } else if (!vgs.io.touch.on && prevTouched && touchingView) {
         touchingView->onTouchEnd(prevTouchX - touchingView->pos.x, prevTouchY - touchingView->pos.y);
         touchingView = nullptr;
     }
-    prevTouched = touched;
-    if (touched) {
-        prevTouchX = touchX;
-        prevTouchY = touchY;
+    prevTouched = vgs.io.touch.on;
+    if (vgs.io.touch.on) {
+        prevTouchX = vgs.io.touch.x;
+        prevTouchY = vgs.io.touch.y;
     }
 
     // アニメーション対象Viewを再描画
     songList->move();
     for (int i = 0; i < 6; i++) {
-        keys[i]->update(vgs.getTone(i), vgs.getKey(i));
+        keys[i]->update(vgs.bgm.getTone(i), vgs.bgm.getKey(i));
     }
-}
-
-#define UDA1334A_PIN_DIN 13
-#define UDA1334A_PIN_BCLK 14
-#define UDA1334A_PIN_WSEL 15
-#define VGS_BUFFER_SIZE 4096 /* x2 of I2S internal ring buffer size */
-
-void setup1()
-{
-    while (!setupCpu0End) {
-        delay(1);
-    }
-    i2s.setBCLK(UDA1334A_PIN_BCLK);
-    i2s.setDATA(UDA1334A_PIN_DIN);
-    i2s.setBitsPerSample(16);
-    i2s.setBuffers(16, 128, 0); // 2048 bytes
-    i2s.begin(22050);
-    // vgs.load(&rom_bgm[albums[0].songs[0].bgmHead], albums[0].songs[0].bgmSize);
-}
-
-void loop1()
-{
-    static int16_t buffer[2][VGS_BUFFER_SIZE];
-    static int page = 0;
-    static int index = 0;
-    if (0 == index) {
-        page = 1 - page;
-    } else if (VGS_BUFFER_SIZE / 2 == index) {
-        vgsLock();
-        vgs.execute(buffer[1 - page], VGS_BUFFER_SIZE * 2);
-        vgsUnlock();
-    }
-    i2s.write16(buffer[page][index], buffer[page][index]);
-    index = (index + 1) % VGS_BUFFER_SIZE;
 }

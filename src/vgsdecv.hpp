@@ -1,6 +1,6 @@
 /**
  * VGS BGM Decoder for Variable NOTEs (vgsftv compressed data)
- * License under GPLv3: https://github.com/suzukiplan/tohovgs-pico/blob/master/LICENSE.txt
+ * License under MIT: https://github.com/suzukiplan/vgssdk-pico/blob/master/LICENSE.txt
  * (C)2023, SUZUKI PLAN
  */
 
@@ -62,6 +62,7 @@ class VGSDecoder
     struct Context {
         int nidx;
         bool play;
+        bool playEnd;
         bool stopped;
         unsigned short mvol;
         unsigned int waitTime;
@@ -209,6 +210,7 @@ class VGSDecoder
     bool load(const void* data, size_t size)
     {
         memset(&this->ctx, 0, sizeof(this->ctx));
+        this->ctx.playEnd = false;
         this->ctx.volumeRate = this->masterVolume;
         for (int i = 0; i < 6; i++) {
             this->ctx.ch[i].volumeRate = 100;
@@ -249,14 +251,20 @@ class VGSDecoder
             return false;
         }
         if (100 <= ctx.fade2) {
-            ctx.play = false;
+            if (ctx.play) {
+                ctx.play = false;
+                ctx.playEnd = true;
+            }
             return false;
         }
         if (0 == ctx.waitTime) {
             ctx.waitTime = get_next_note();
         }
         if (0 == ctx.waitTime) {
-            ctx.play = false;
+            if (ctx.play) {
+                ctx.play = false;
+                ctx.playEnd = true;
+            }
             return false;
         }
         if (0 == ctx.mvol) {
@@ -357,11 +365,6 @@ class VGSDecoder
         return true;
     }
 
-    int getLoopCount()
-    {
-        return ctx.loop;
-    }
-
     void fadeout()
     {
         if (0 == ctx.fade2) {
@@ -369,16 +372,17 @@ class VGSDecoder
         }
     }
 
+    bool isPlayEnd()
+    {
+        bool result = ctx.playEnd;
+        ctx.playEnd = false;
+        return result;
+    }
+
+    int getLoopCount() { return ctx.loop; }
     inline unsigned char getTone(unsigned char cn) { return ctx.ch[cn].toneT; }
     inline unsigned char getKey(unsigned char cn) { return ctx.ch[cn].keyOn || ctx.ch[cn].count < ctx.ch[cn].env2 ? ctx.ch[cn].toneK : 0xFF; }
-
-    unsigned int getLengthTime()
-    {
-        return bgm.lengthTime;
-    }
-
-    unsigned int getLoopTime()
-    {
-        return bgm.loopTime;
-    }
+    unsigned int getLengthTime() { return bgm.lengthTime; }
+    unsigned int getLoopTime() { return bgm.loopTime; }
+    unsigned int getDurationTime() { return ctx.timeP; }
 };

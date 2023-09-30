@@ -16,6 +16,25 @@ all-Linux:
 build: roms
 	pio run
 
+clean:
+	rm -f ./src/rom_*.c
+	rm -f ./rom/bgm.dat
+	rm -f ./rom/songlist_sjis.dat
+	rm -f ./rom/songlist_utf8.dat
+	rm -f ./rom/songlist.bin
+	rm -f ./rom/*.bgm
+	rm -f ./BGM.mak
+	rm -f ./tools/bin2var/bin2var
+	rm -f ./tools/bmp2img/bmp2img
+	rm -f ./tools/bplay/bplay
+	rm -f ./tools/sldcnv/sldcnv
+	rm -f ./tools/sldmak/sldmak
+	rm -f ./tools/sljcnv/sljcnv
+	rm -f ./tools/varext/varext
+	rm -f ./tools/vgsftv/vgsftv
+	rm -f ./tools/vgslz4/vgslz4
+	rm -f ./tools/vgsmml/vgsmml
+
 roms:
 	cd tools/bmp2img && make
 	cd tools/bin2var && make
@@ -31,7 +50,7 @@ roms:
 	make -f BGM.mak all
 	make rom/songlist_sjis.dat
 	make rom/songlist.bin
-	make include/roms.hpp
+	make src/roms.hpp
 
 src/rom_small_font.c: rom/small_font.bmp
 	tools/bmp2img/bmp2img -t 4x8 rom/small_font.bmp >src/rom_small_font.c
@@ -57,14 +76,18 @@ src/rom_songlist.c: rom/songlist.bin
 src/rom_bgm.c: rom/bgm.dat
 	tools/bin2var/bin2var rom/bgm.dat >src/rom_bgm.c
 
-include/roms.hpp: ${ROMS}
-	tools/varext/varext ${ROMS} >include/roms.hpp
+src/roms.hpp: ${ROMS}
+	tools/varext/varext ${ROMS} >src/roms.hpp
 
 format: 
 	make execute-format FILENAME=./src/app.cpp
 	make execute-format FILENAME=./src/vgstone.c
 	make execute-format FILENAME=./src/vgsdecv.hpp
-        
+	make execute-format FILENAME=./src/model.h
+	make execute-format FILENAME=./src/vgssdk_pico.cpp
+	make execute-format FILENAME=./src/vgssdk.h
+	make execute-format FILENAME=./simulator/src/vgssdk_sdl2.cpp
+
 execute-format:
 	clang-format -style=file < ${FILENAME} > ${FILENAME}.bak
 	cat ${FILENAME}.bak > ${FILENAME}

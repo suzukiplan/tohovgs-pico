@@ -41,7 +41,7 @@ __（国内で調達できない部品）__
   - 国内でも調達できる純正の RaspberryPi Pico だとフラッシュ容量不足のため全曲を入れることはできません
 - [ILI9341: Module with Touch (LCD module)](https://ja.aliexpress.com/item/1005003005413104.html)
   - このタッチパネルは抵抗膜方式なので、操作性は良くありません
-  - 予算に余裕があれば静電容量方式のタッチパネルを調達することをお勧めします
+  - __操作性が良い静電容量方式のタッチパネルのディスプレイドライバへの仕様変更を予定しています__
 - [UDA1334A (DAC module)](https://ja.aliexpress.com/item/1005001993192815.html)
   - UDA1334A は EOL (生産終了) なので純正品の調達は現在できません
   - 上記リンクは互換製品です
@@ -132,6 +132,10 @@ make build
 - 8×12 ドット日本語フォント「k8x12」
   - Web Site: [https://littlelimit.net/k8x12.htm](https://littlelimit.net/k8x12.htm)
   - License: [Original](./licenses-copy/k8x12.txt)
+- Video Game System SDK - Pico
+  - Web Site: [https://github.com/suzukiplan/vgssdk-pico](https://github.com/suzukiplan/vgssdk-pico)
+  - License: [MIT](./licenses-copy/vgssdk.txt)
+  - `Copyright (c) 2023 Yoji Suzuki.`
 
 ### Hardware Sales
 
