@@ -358,7 +358,7 @@ class SeekbarView : public View
 
     void update(int max, int progress) 
     {
-        if (this->movingProgress) {
+        if (this->movingProgress || max < 1) {
             return;
         } else {
             gfx->startWrite();
