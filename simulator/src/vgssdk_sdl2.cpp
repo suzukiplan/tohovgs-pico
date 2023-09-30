@@ -181,12 +181,18 @@ void VGS::GFX::pixel(int x, int y, unsigned short color)
     }
     x += this->viewport.x;
     y += this->viewport.y;
-    if (x < 0 || y < 0 || VGS_DISPLAY_WIDTH <= x || VGS_DISPLAY_HEIGHT <= y) {
+    if (x < 0 || y < 0) {
         return;
     }
     if (this->isVirtual()) {
+        if (this->vDisplay.width <= x || this->vDisplay.height <= y) {
+            return;
+        }
         this->vDisplay.buffer[y * this->vDisplay.width + x] = color;
     } else {
+        if (VGS_DISPLAY_WIDTH <= x || VGS_DISPLAY_HEIGHT <= y) {
+            return;
+        }
         auto display = (unsigned int*)windowSurface->pixels;
         display += y * windowSurface->pitch / windowSurface->format->BytesPerPixel;
         display += x;
