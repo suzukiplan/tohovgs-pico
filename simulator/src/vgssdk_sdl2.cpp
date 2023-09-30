@@ -89,6 +89,7 @@ VGS::GFX::GFX(int width, int height)
     this->vDisplay.width = width;
     this->vDisplay.height = height;
     this->vDisplay.buffer = (unsigned short*)malloc(width * height * 2);
+    memset(this->vDisplay.buffer, 0, width * height * 2);
     this->clearViewport();
 }
 
