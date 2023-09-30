@@ -176,9 +176,12 @@ void VGS::GFX::clear(unsigned short color)
 
 void VGS::GFX::pixel(int x, int y, unsigned short color)
 {
+    if (this->viewport.width <= x || this->viewport.height <= y) {
+        return;
+    }
     x += this->viewport.x;
     y += this->viewport.y;
-    if (x < 0 || y < 0 || this->viewport.width <= x || this->viewport.height <= y) {
+    if (x < 0 || y < 0 || VGS_DISPLAY_WIDTH <= x || VGS_DISPLAY_HEIGHT <= y) {
         return;
     }
     if (this->isVirtual()) {
