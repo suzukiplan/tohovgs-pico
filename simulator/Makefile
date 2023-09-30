@@ -21,6 +21,7 @@ all:
 	cd .. && make roms
 	make ${OBJECTS}
 	g++ -o app ${OBJECTS} -L/usr/local/lib -lSDL2
+	./app
 
 clean:
 	cd ../ && make clean
