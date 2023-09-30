@@ -146,9 +146,9 @@ class View
         pos.h = h;
     }
 
-    virtual void onTouchStart(int tx, int ty);
-    virtual void onTouchMove(int tx, int ty);
-    virtual void onTouchEnd(int tx, int ty);
+    virtual void onTouchStart(int tx, int ty) = 0;
+    virtual void onTouchMove(int tx, int ty) = 0;
+    virtual void onTouchEnd(int tx, int ty) = 0;
 };
 
 class TopBoardView : public View
