@@ -132,6 +132,10 @@ make build
 - 8×12 ドット日本語フォント「k8x12」
   - Web Site: [https://littlelimit.net/k8x12.htm](https://littlelimit.net/k8x12.htm)
   - License: [Original](./licenses-copy/k8x12.txt)
+- Video Game System SDK - Pico
+  - Web Site: [https://github.com/suzukiplan/vgssdk-pico](https://github.com/suzukiplan/vgssdk-pico)
+  - License: [MIT](./licenses-copy/vgssdk.txt)
+  - `Copyright (c) 2023 Yoji Suzuki.`
 
 ### Hardware Sales
 
