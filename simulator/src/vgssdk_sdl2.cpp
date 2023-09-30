@@ -582,6 +582,7 @@ int main()
     vgs.bgm.pause();
     SDL_CloseAudioDevice(bgmAudioDeviceId);
     bgmAudioDeviceId = 0;
+    SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
 }
