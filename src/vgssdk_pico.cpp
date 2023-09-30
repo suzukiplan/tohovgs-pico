@@ -369,7 +369,7 @@ void setup()
 void loop()
 {
     uint16_t tx, ty;
-    vgs.io.touch.on = tft.getTouch(&tx, &ty);
+    vgs.io.touch.on = 0 < tft.getTouch(&tx, &ty);
     if (vgs.io.touch.on) {
         vgs.io.touch.x = tx;
         vgs.io.touch.y = ty;
