@@ -6,4 +6,4 @@ SOURCE=\
 	../../src/vgstone.c
 
 all:
-	g++ -std=c++11 -I../../src -I../../include -Os -o bplay $(SOURCE) -lasound
+	g++ -std=c++11 -I../../src -Os -o bplay $(SOURCE) -lasound
