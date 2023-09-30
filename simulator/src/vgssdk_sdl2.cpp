@@ -208,7 +208,7 @@ void VGS::GFX::lineV(int x1, int y1, int y2, unsigned short color)
         y2 = y1;
         y1 = w;
     }
-    for (; y1 < y2; y1++) {
+    for (; y1 <= y2; y1++) {
         this->pixel(x1, y1, color);
     }
 }
@@ -220,7 +220,7 @@ void VGS::GFX::lineH(int x1, int y1, int x2, unsigned short color)
         x2 = x1;
         x1 = w;
     }
-    for (; x1 < x2; x1++) {
+    for (; x1 <= x2; x1++) {
         this->pixel(x1, y1, color);
     }
 }
@@ -308,9 +308,8 @@ void VGS::GFX::boxf(int x, int y, int width, int height, unsigned short color)
 {
     if (0 < width && 0 < height) {
         int x2 = x + width - 1;
-        int y2 = y + height;
-        for (; y < y2; y++) {
-            this->lineH(x, y, x2, color);
+        for (int i = 0; i < height; i++) {
+            this->lineH(x, y++, x2, color);
         }
     }
 }
