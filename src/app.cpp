@@ -822,5 +822,8 @@ extern "C" void vgs_loop()
     if (vgs.bgm.isPlayEnd()) {
         songList->playNextSong();
     }
+    if (1 <= vgs.bgm.getLoopCount()) {
+        vgs.bgm.fadeout();
+    }
     seekbar->update(vgs.bgm.getLengthTime(), vgs.bgm.getDurationTime());
 }
