@@ -540,11 +540,16 @@ int main()
             vgs.gfx.startWrite();
         }
         vgs_loop();
-        if (SDL_PollEvent(&event)) {
+        bool quit = false;
+        while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                SDL_DestroyWindow(window);
-                SDL_Quit();
+                quit = true;
                 break;
+            } else if (event.type == SDL_KEYDOWN) {
+                if (SDLK_q == event.key.keysym.sym) {
+                    quit = true;
+                    break;
+                }
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 vgs.io.touch.on = true;
                 SDL_GetMouseState(&vgs.io.touch.x, &vgs.io.touch.y);
@@ -553,6 +558,9 @@ int main()
             } else {
                 SDL_GetMouseState(&vgs.io.touch.x, &vgs.io.touch.y);
             }
+        }
+        if (quit) {
+            break;
         }
         if (vgs.is60FpsMode()) {
             vgs.gfx.endWrite();
