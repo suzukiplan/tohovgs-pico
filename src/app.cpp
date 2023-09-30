@@ -737,7 +737,6 @@ extern "C" void vgs_setup()
     seekbar = new SeekbarView(&vgs.gfx, 320 - 24);
 
     vgs.gfx.endWrite();
-    vgs.delay(200);
 }
 
 extern "C" void vgs_loop()
