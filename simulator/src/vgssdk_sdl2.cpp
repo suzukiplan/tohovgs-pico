@@ -201,36 +201,26 @@ void VGS::GFX::pixel(int x, int y, unsigned short color)
     }
 }
 
-void VGS::GFX::lineV(int x1, int y1, int y2, unsigned short color)
+void VGS::GFX::lineV(int x, int y, int height, unsigned short color)
 {
-    if (y2 < y1) {
-        auto w = y2;
-        y2 = y1;
-        y1 = w;
-    }
-    for (; y1 <= y2; y1++) {
-        this->pixel(x1, y1, color);
+    for (int i = 0; i < height; i++) {
+        this->pixel(x, y++, color);
     }
 }
 
-void VGS::GFX::lineH(int x1, int y1, int x2, unsigned short color)
+void VGS::GFX::lineH(int x, int y, int width, unsigned short color)
 {
-    if (x2 < x1) {
-        auto w = x2;
-        x2 = x1;
-        x1 = w;
-    }
-    for (; x1 <= x2; x1++) {
-        this->pixel(x1, y1, color);
+    for (int i = 0; i < width; i++) {
+        this->pixel(x++, y, color);
     }
 }
 
 void VGS::GFX::line(int x1, int y1, int x2, int y2, unsigned short color)
 {
     if (x1 == x2) {
-        this->lineV(x1, y1, y2, color);
+        this->lineV(x1, y1, abs(y1 - y2) + 1, color);
     } else if (y1 == y2) {
-        this->lineH(x1, y1, x2, color);
+        this->lineH(x1, y1, abs(x1 - x2) + 1, color);
     }
     int ia, ib, ie;
     int w;
@@ -295,21 +285,18 @@ void VGS::GFX::line(int x1, int y1, int x2, int y2, unsigned short color)
 void VGS::GFX::box(int x, int y, int width, int height, unsigned short color)
 {
     if (0 < width && 0 < height) {
-        int x2 = x + width - 1;
-        int y2 = y + height - 1;
-        this->lineH(x, y, x2, color);
-        this->lineH(x, y2, x2, color);
-        this->lineV(x, y, y2, color);
-        this->lineV(x2, y, y2, color);
+        this->lineH(x, y, width, color);
+        this->lineH(x, y + height - 1, width, color);
+        this->lineV(x, y, height, color);
+        this->lineV(x + width - 1, y, height, color);
     }
 }
 
 void VGS::GFX::boxf(int x, int y, int width, int height, unsigned short color)
 {
     if (0 < width && 0 < height) {
-        int x2 = x + width - 1;
         for (int i = 0; i < height; i++) {
-            this->lineH(x, y++, x2, color);
+            this->lineH(x, y++, width, color);
         }
     }
 }

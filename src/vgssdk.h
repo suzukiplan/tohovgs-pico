@@ -43,8 +43,8 @@ class VGS
         void setViewport(int x, int y, int width, int height);
         void clearViewport();
         void pixel(int x, int y, unsigned short color);
-        void lineV(int x1, int y1, int y2, unsigned short color);
-        void lineH(int x1, int y1, int x2, unsigned short color);
+        void lineV(int x, int y, int height, unsigned short color);
+        void lineH(int x, int y, int width, unsigned short color);
         void line(int x1, int y1, int x2, int y2, unsigned short color);
         void box(int x, int y, int width, int height, unsigned short color);
         void boxf(int x, int y, int width, int height, unsigned short color);
