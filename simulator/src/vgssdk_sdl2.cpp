@@ -305,7 +305,7 @@ void VGS::GFX::boxf(int x, int y, int width, int height, unsigned short color)
     }
 }
 
-void VGS::GFX::image(int x, int y, int width, int height, unsigned short* buffer)
+void VGS::GFX::image(int x, int y, int width, int height, const unsigned short* buffer)
 {
     int ptr = 0;
     for (int yy = 0; yy < height; yy++) {
@@ -449,6 +449,11 @@ VGS::~VGS()
 void VGS::delay(int ms)
 {
     usleep(ms * 1000);
+}
+
+void VGS::led(bool on)
+{
+    log("LED: %s", on ? "on" : "off");
 }
 
 int main()

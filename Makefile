@@ -83,7 +83,11 @@ format:
 	make execute-format FILENAME=./src/app.cpp
 	make execute-format FILENAME=./src/vgstone.c
 	make execute-format FILENAME=./src/vgsdecv.hpp
-        
+	make execute-format FILENAME=./src/model.h
+	make execute-format FILENAME=./src/vgssdk_pico.cpp
+	make execute-format FILENAME=./src/vgssdk.h
+	make execute-format FILENAME=./simulator/src/vgssdk_sdl2.cpp
+
 execute-format:
 	clang-format -style=file < ${FILENAME} > ${FILENAME}.bak
 	cat ${FILENAME}.bak > ${FILENAME}

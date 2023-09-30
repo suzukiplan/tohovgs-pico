@@ -1,5 +1,5 @@
-CFLAGS = -O2 -I./src -I../src -I../include -I/usr/include/SDL2 -c
-CPP = g++ -std=c++11 ${CFLAGS}
+CFLAGS = -O2 -I./src -I../src -I../include -I/usr/include/SDL2 -I/usr/local/include/SDL2 -I/opt/X11/include -D_THREAD_SAFE -c
+CPP = g++ -std=c++17 ${CFLAGS}
 CC = gcc ${CFLAGS}
 
 OBJECTS = vgssdk_sdl2.o\
@@ -20,7 +20,7 @@ HEADERS = ../src/vgssdk.h\
 all:
 	cd .. && make roms
 	make ${OBJECTS}
-	@echo TODO: link objects
+	g++ -o app ${OBJECTS} -L/usr/local/lib -lSDL2
 
 clean:
 	cd ../ && make clean

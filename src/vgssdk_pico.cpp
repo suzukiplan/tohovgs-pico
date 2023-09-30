@@ -175,7 +175,7 @@ void VGS::GFX::boxf(int x, int y, int width, int height, unsigned short color)
     }
 }
 
-void VGS::GFX::image(int x, int y, int width, int height, unsigned short* buffer)
+void VGS::GFX::image(int x, int y, int width, int height, const unsigned short* buffer)
 {
     if (this->isVirtual()) {
         ((TFT_eSprite*)this->vDisplay.buffer)->pushImage(x, y, width, height, buffer);
@@ -291,6 +291,11 @@ VGS::~VGS()
 void VGS::delay(int ms)
 {
     delay(ms);
+}
+
+void VGS::led(bool on)
+{
+    digitalWrite(25, on ? HIGH : LOW);
 }
 
 void setup1()
