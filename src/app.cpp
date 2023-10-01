@@ -270,29 +270,26 @@ class KeyboardView : public View
 class SeekbarView : public View
 {
   private:
+    int max;
+    int progress;
     bool movingProgress;
-    void render()
-    {
-        gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        this->gfx->line(204, 0, 204, this->pos.h, COLOR_GRAY);
-        this->gfx->line(0, 0, 240, 0, COLOR_GRAY);
-        this->renderDuration(0);
-        this->renderProgress(100, 0);
-    }
 
     void renderDuration(int sec)
     {
         printSmallFont(this->gfx, 4, (this->pos.h - 8) / 2 + 1, "%02d:%02d", sec / 60, sec % 60);
     }
 
-    void renderProgress(int max, int progress)
+    void renderProgress()
     {
-        Position p;
         progress = (progress * 100) / max;
         progress *= 164;
         progress /= 100;
-        if (160 < progress) progress = 160;
+        if (160 < progress) {
+            progress = 160;
+        }
         this->gfx->boxf(32 + progress, 3, 4, this->pos.h - 6, COLOR_WHITE);
+
+        Position p;
         if (progress < 160) {
             p.x = 32 + progress + 4;
             p.y = (this->pos.h - 2) / 2;
@@ -317,14 +314,20 @@ class SeekbarView : public View
 
     void updateProgress(int max, int progress)
     {
+        if (max < 1) {
+            max = 1;
+        }
         if (progress < 0) {
             progress = 0;
         } else if (max <= progress) {
             progress = max - 1;
         }
+        this->max = max;
+        this->progress = progress;
         gfx->startWrite();
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        this->renderProgress(max, progress);
+        this->renderDuration(progress / 22050);
+        this->renderProgress();
         gfx->endWrite();
     }
 
@@ -333,27 +336,37 @@ class SeekbarView : public View
     {
         init(gfx, 0, y, 240, 24);
         this->movingProgress = false;
-        render();
+        this->updateProgress(0, 0);
     }
 
     void onTouchStart(int tx, int ty) override
     {
         if (32 <= tx && tx < 32 + 164) {
             this->movingProgress = true;
-            this->updateProgress(164, tx - 32);
+            this->updateProgress(this->max, (tx - 32) * 100 / 164 * this->max / 100);
         }
     }
 
     void onTouchMove(int tx, int ty) override
     {
         if (this->movingProgress) {
-            this->updateProgress(164, tx - 32);
+            this->updateProgress(this->max, (tx - 32) * 100 / 164 * this->max / 100);
         }
     }
 
     void onTouchEnd(int tx, int ty) override
     {
         this->movingProgress = false;
+        if (22050 < this->max) {
+            vgs.bgm.seekTo((tx - 32) * 100 / 164 * this->max / 100);
+        }
+    }
+
+    void update(int max, int progress)
+    {
+        if (!this->movingProgress) {
+            this->updateProgress(max, progress);
+        }
     }
 };
 
@@ -507,6 +520,14 @@ class SongListView : public View
         this->transferSprite();
     }
 
+    void play(int ai, int si)
+    {
+        memcpy(&this->playingSong, &this->albums[ai].songs[si], sizeof(this->playingSong));
+        this->playingAlbumIndex = ai;
+        this->playingSongIndex = si;
+        this->onTapSong(&this->playingSong);
+    }
+
   public:
     SongListView(VGS::GFX* gfx, Album* albums, int albumCount, int y, int h)
     {
@@ -523,6 +544,31 @@ class SongListView : public View
     }
 
     void (*onTapSong)(Song* song);
+
+    void playNextSong()
+    {
+        auto album = &this->albums[this->playingAlbumIndex];
+        int nextSongIndex;
+        for (nextSongIndex = this->playingSongIndex + 1; nextSongIndex < 32; nextSongIndex++) {
+            if (album->songs[nextSongIndex].name[0]) {
+                break;
+            }
+        }
+        if (nextSongIndex < 32) {
+            // 現在のアルバムの次の曲を演奏
+            this->play(this->playingAlbumIndex, nextSongIndex);
+        } else {
+            // 次のアルバムの先頭の曲を演奏
+            int nextAlbumIndex = this->playingAlbumIndex + 1;
+            nextAlbumIndex %= this->albumCount;
+            for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
+                if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
+                    this->play(nextAlbumIndex, nextSongIndex);
+                    break;
+                }
+            }
+        }
+    }
 
     void resetVars()
     {
@@ -773,4 +819,11 @@ extern "C" void vgs_loop()
     for (int i = 0; i < 6; i++) {
         keys[i]->update(vgs.bgm.getTone(i), vgs.bgm.getKey(i));
     }
+    if (vgs.bgm.isPlayEnd()) {
+        songList->playNextSong();
+    }
+    if (1 <= vgs.bgm.getLoopCount()) {
+        vgs.bgm.fadeout();
+    }
+    seekbar->update(vgs.bgm.getLengthTime(), vgs.bgm.getDurationTime());
 }
