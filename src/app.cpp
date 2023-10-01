@@ -332,29 +332,29 @@ class SeekbarView : public View
 
     void renderProgress()
     {
-        progress = (progress * 100) / max;
-        progress *= 164;
-        progress /= 100;
-        if (160 < progress) {
-            progress = 160;
+        auto pi = (this->progress * 100) / max;
+        pi *= 164;
+        pi /= 100;
+        if (160 < pi) {
+            pi = 160;
         }
-        this->gfx->boxf(32 + progress, 3, 4, this->pos.h - 6, COLOR_WHITE);
+        this->gfx->boxf(32 + pi, 3, 4, this->pos.h - 6, COLOR_WHITE);
 
         Position p;
-        if (progress < 160) {
-            p.x = 32 + progress + 4;
+        if (pi < 160) {
+            p.x = 32 + pi + 4;
             p.y = (this->pos.h - 2) / 2;
-            p.w = 160 - progress;
+            p.w = 160 - pi;
             p.h = 1;
             this->gfx->boxf(p.x, p.y, p.w, p.h, COLOR_GRAY);
             this->gfx->boxf(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
             this->gfx->boxf(p.x, 3, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
             this->gfx->boxf(p.x, p.y + 2, p.w, (pos.h - 6) / 2 - 1, COLOR_BG);
         }
-        if (0 < progress) {
+        if (0 < pi) {
             p.x = 32;
             p.y = (this->pos.h - 2) / 2;
-            p.w = progress;
+            p.w = pi;
             p.h = 1;
             this->gfx->boxf(p.x, p.y, p.w, p.h, COLOR_GRAY);
             this->gfx->boxf(p.x, p.y + 1, p.w, p.h, COLOR_GRAY_DARK);
@@ -409,7 +409,7 @@ class SeekbarView : public View
     {
         this->movingProgress = false;
         if (22050 < this->max) {
-            vgs.bgm.seekTo((tx - 32) * 100 / 164 * this->max / 100, [](int percent) {
+            vgs.bgm.seekTo(this->progress, [](int percent) {
                 showSeekingDialog(percent);
             });
             hideDialog();
