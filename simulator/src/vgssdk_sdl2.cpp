@@ -394,9 +394,7 @@ void VGS::BGM::seekTo(int time, void (*callback)(int percent))
 {
     if (bgmAudioDeviceId) {
         this->pause();
-        SDL_LockAudioDevice(bgmAudioDeviceId);
         ((VGSDecoder*)this->context)->seekTo(time, callback);
-        SDL_UnlockAudioDevice(bgmAudioDeviceId);
         this->resume();
     }
 }
