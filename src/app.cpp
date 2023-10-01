@@ -163,23 +163,25 @@ static void showSeekingDialog(int percent)
     static const int h = 60;
     int x = (dialog.pos.w - w) / 2;
     int y = (dialog.pos.h - h) / 2;
-    vgs.gfx.startWrite();
     if (showDialog()) {
+        vgs.gfx.startWrite();
         vgs.gfx.boxf(x, y, w, h, COLOR_WHITE);
         vgs.gfx.box(x, y, w, h, COLOR_BLACK);
-        printKanji(&vgs.gfx, 92, y + 8, COLOR_BLACK, "Please Wait...");
+        printKanji(&vgs.gfx, 92, y + 8, COLOR_BLACK, "NOW SEEKING...");
         for (int i = 0; i < 33; i++) {
             vgs.gfx.box(x + 17 + i * 5, y + 28, 4, 16, COLOR_BLACK);
         }
         prevPercent = -1;
+        vgs.gfx.endWrite();
     }
     if (prevPercent != percent) {
+        vgs.gfx.startWrite();
         prevPercent = percent;
         for (int i = 0; i < percent / 3; i++) {
             vgs.gfx.boxf(x + 17 + i * 5, y + 28, 4, 16, COLOR_BLACK);
         }
+        vgs.gfx.endWrite();
     }
-    vgs.gfx.endWrite();
 }
 
 class View
