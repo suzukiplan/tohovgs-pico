@@ -242,15 +242,14 @@ class VGSDecoder
     unsigned int execute(void* buffer, size_t size)
     {
         unsigned int result = 0;
-        if (!buffer) return result;
-
         char* buf = (char*)buffer;
         int pw;
         int wav;
-        short* bp;
 
-        memset(ctx.wav, 0, sizeof(ctx.wav));
-        memset(buf, 0, size);
+        if (buf) {
+            memset(ctx.wav, 0, sizeof(ctx.wav));
+            memset(buf, 0, size);
+        }
         if (!ctx.play || bgm.size < 1) {
             ctx.stopped = true;
             return result;
@@ -298,8 +297,8 @@ class VGSDecoder
                             pw = 0;
                         }
                     }
-                    if (!ctx.ch[j].mute) {
-                        bp = (short*)(&buf[i]);
+                    if (!ctx.ch[j].mute && buf) {
+                        auto bp = (short*)(&buf[i]);
                         wav = (wav * pw / 100);
                         if (ctx.ch[j].volumeRate != 100) {
                             wav *= ctx.ch[j].volumeRate;
@@ -335,8 +334,8 @@ class VGSDecoder
                     }
                 }
             }
-            if (ctx.volumeRate != 100) {
-                bp = (short*)(&buf[i]);
+            if (ctx.volumeRate != 100 && buf) {
+                auto bp = (short*)(&buf[i]);
                 wav = (*bp) * ctx.volumeRate;
                 wav /= 100;
                 if (32767 < wav)
@@ -383,9 +382,8 @@ class VGSDecoder
     void seekTo(int time)
     {
         this->resetContext();
-        char buf[256];
         while (0 < time && this->ctx.play) {
-            time -= this->execute(buf, sizeof(buf));
+            time -= this->execute(nullptr, 256);
         }
     }
 
