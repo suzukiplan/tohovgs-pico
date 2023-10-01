@@ -75,7 +75,7 @@ static inline unsigned short sjis2jis(const unsigned char* sjis)
     return ret;
 }
 
-static void printKanji(VGS::GFX* gfx, int x, int y, const char* format, ...)
+static void printKanji(VGS::GFX* gfx, int x, int y, unsigned short color, const char* format, ...)
 {
     static unsigned char bit[8] = {
         0b10000000,
@@ -103,7 +103,7 @@ static void printKanji(VGS::GFX* gfx, int x, int y, const char* format, ...)
                 for (int yy = 0; yy < 12; yy++) {
                     for (int xx = 0; xx < 8; xx++) {
                         if (rom_k8x12S_jisx0208[jis + yy] & bit[xx]) {
-                            gfx->pixel(x + xx, y + yy, COLOR_WHITE);
+                            gfx->pixel(x + xx, y + yy, color);
                         }
                     }
                 }
@@ -115,7 +115,7 @@ static void printKanji(VGS::GFX* gfx, int x, int y, const char* format, ...)
                 for (int yy = 0; yy < 12; yy++) {
                     for (int xx = 0; xx < 4; xx++) {
                         if (rom_k8x12S_jisx0201[jis + yy] & bit[xx]) {
-                            gfx->pixel(x + xx, y + yy, COLOR_WHITE);
+                            gfx->pixel(x + xx, y + yy, color);
                         }
                     }
                 }
@@ -130,6 +130,57 @@ typedef struct Position_ {
     int w;
     int h;
 } Position;
+
+struct Dialog {
+    bool on;
+    Position pos;
+} dialog;
+
+static bool showDialog()
+{
+    vgs.gfx.setViewport(dialog.pos.x, dialog.pos.y, dialog.pos.w, dialog.pos.h);
+    if (!dialog.on) {
+        dialog.on = true;
+        for (int y = 0; y < dialog.pos.h; y++) {
+            for (int x = 0; x < dialog.pos.w; x += 2) {
+                vgs.gfx.pixel(x + (y & 1), y, 0x0000);
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+static void hideDialog()
+{
+    dialog.on = false;
+}
+
+static void showSeekingDialog(int percent)
+{
+    static int prevPercent;
+    static const int w = 200;
+    static const int h = 60;
+    int x = (dialog.pos.w - w) / 2;
+    int y = (dialog.pos.h - h) / 2;
+    vgs.gfx.startWrite();
+    if (showDialog()) {
+        vgs.gfx.boxf(x, y, w, h, COLOR_WHITE);
+        vgs.gfx.box(x, y, w, h, COLOR_BLACK);
+        printKanji(&vgs.gfx, 92, y + 8, COLOR_BLACK, "Please Wait...");
+        for (int i = 0; i < 33; i++) {
+            vgs.gfx.box(x + 17 + i * 5, y + 28, 4, 16, COLOR_BLACK);
+        }
+        prevPercent = -1;
+    }
+    if (prevPercent != percent) {
+        prevPercent = percent;
+        for (int i = 0; i < percent / 3; i++) {
+            vgs.gfx.boxf(x + 17 + i * 5, y + 28, 4, 16, COLOR_BLACK);
+        }
+    }
+    vgs.gfx.endWrite();
+}
 
 class View
 {
@@ -173,7 +224,7 @@ class TopBoardView : public View
     {
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->gfx->boxf(4, 2, pos.w - 4, 12, COLOR_BG);
-        printKanji(this->gfx, 4, 2, "%s", song->name);
+        printKanji(this->gfx, 4, 2, COLOR_WHITE, "%s", song->name);
     }
 
     void onTouchStart(int tx, int ty) override {}
@@ -358,7 +409,10 @@ class SeekbarView : public View
     {
         this->movingProgress = false;
         if (22050 < this->max) {
-            vgs.bgm.seekTo((tx - 32) * 100 / 164 * this->max / 100);
+            vgs.bgm.seekTo((tx - 32) * 100 / 164 * this->max / 100, [](int percent) {
+                showSeekingDialog(percent);
+            });
+            hideDialog();
         }
     }
 
@@ -436,11 +490,11 @@ class SongListView : public View
     {
         y += 8;
         if (-12 < y) {
-            printKanji(this->sprite, x + 4, y, "%s", this->albums[ai].name);
+            printKanji(this->sprite, x + 4, y, COLOR_WHITE, "%s", this->albums[ai].name);
         }
         y += 16;
         if (-12 < y) {
-            printKanji(this->sprite, x + pos.w - strlen(this->albums[ai].copyright) * 4 - 4, y, "%s", this->albums[ai].copyright);
+            printKanji(this->sprite, x + pos.w - strlen(this->albums[ai].copyright) * 4 - 4, y, COLOR_WHITE, "%s", this->albums[ai].copyright);
         }
         y += 24;
         for (int i = 0; i < 32; i++) {
@@ -465,31 +519,31 @@ class SongListView : public View
                 this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
                 this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
                 this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
-                printKanji(this->sprite, x + 10, y + 4, "%s", this->albums[ai].songs[i].name);
+                printKanji(this->sprite, x + 10, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 y += 22;
             }
         }
         y += 4;
         if (y < pos.h) {
-            printKanji(this->sprite, x + 4, y, "Composed by ZUN.");
+            printKanji(this->sprite, x + 4, y, COLOR_WHITE, "Composed by ZUN.");
         } else if (this->contentHeight) {
             return this->contentHeight;
         }
         y += 16;
         if (y < pos.h) {
-            printKanji(this->sprite, x + 8, y, "This app is an alternative fiction of the Touhou Project.");
+            printKanji(this->sprite, x + 8, y, COLOR_WHITE, "This app is an alternative fiction of the Touhou Project.");
         } else if (this->contentHeight) {
             return this->contentHeight;
         }
         y += 16;
         if (y < pos.h) {
-            printKanji(this->sprite, x + 140, y, "Arranged by Yoji Suzuki.");
+            printKanji(this->sprite, x + 140, y, COLOR_WHITE, "Arranged by Yoji Suzuki.");
         } else if (this->contentHeight) {
             return this->contentHeight;
         }
         y += 14;
         if (y < pos.h) {
-            printKanji(this->sprite, x + 100, y, "(C)2013, Presented by SUZUKI PLAN.");
+            printKanji(this->sprite, x + 100, y, COLOR_WHITE, "(C)2013, Presented by SUZUKI PLAN.");
         } else if (this->contentHeight) {
             return this->contentHeight;
         }
@@ -778,6 +832,7 @@ extern "C" void vgs_setup()
         keys[i] = new KeyboardView(&vgs.gfx, i, 4, 40 + i * 10);
     }
     songList = new SongListView(&vgs.gfx, albums, sizeof(rom_songlist) / sizeof(Album), 105, 190);
+    memcpy(&dialog.pos, &songList->pos, sizeof(Position));
     songList->onTapSong = onTapSong;
     seekbar = new SeekbarView(&vgs.gfx, 320 - 24);
 
