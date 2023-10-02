@@ -839,6 +839,7 @@ extern "C" void vgs_setup()
     seekbar = new SeekbarView(&vgs.gfx, 320 - 24);
 
     vgs.gfx.endWrite();
+    vgs.setFrameRate(20);
 }
 
 extern "C" void vgs_loop()
