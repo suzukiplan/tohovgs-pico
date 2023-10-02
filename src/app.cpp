@@ -647,41 +647,40 @@ class SongListView : public View
 
     void correctOverscroll()
     {
-        if (0 == this->flingY) {
-            if (0 < this->scrollTarget || this->contentHeight < pos.h) {
-                this->scrollTarget = 0;
-            } else if (this->scrollTarget < this->scrollBottom) {
-                this->scrollTarget = this->scrollBottom;
-            }
+        if (0 < this->scrollTarget || this->contentHeight < pos.h) {
+            this->scrollTarget = 0;
+            this->flingY = 0;
+        } else if (this->scrollTarget < this->scrollBottom) {
+            this->scrollTarget = this->scrollBottom;
+            this->flingY = 0;
         }
     }
 
     void correctPagePosition()
     {
-        if (0 == this->flingX) {
-            if (2560 < abs(this->swipeTarget)) {
-                if (this->swipeTarget < 0) {
-                    this->pageMove = -1;
-                } else {
-                    // TODO: move to right page
-                    this->swipeTarget = 0;
-                    this->pageMove = 1;
-                }
+        if (2560 < abs(this->swipeTarget)) {
+            if (this->swipeTarget < 0) {
+                this->pageMove = -1;
             } else {
-                this->swipeTarget = 0;
+                this->pageMove = 1;
             }
+        } else {
+            this->swipeTarget = 0;
         }
     }
 
     void move()
     {
         this->touchFrames++;
-        if (this->pageMove && 0 == this->flingX) {
+        if (this->pageMove) {
+            this->flingX = 0;
+            this->swipeTarget = 0;
             int diff = 240 * 128 * this->pageMove - this->swipe;
             diff /= 3;
-            if (diff) {
+            if (128 < abs(diff)) {
                 this->swipe += diff;
             } else {
+                this->swipe = 0;
                 this->pageMove *= -1;
                 this->albumPos += this->pageMove;
                 if (this->albumPos < 0) {
@@ -744,7 +743,11 @@ class SongListView : public View
 
     void onTouchMove(int tx, int ty) override
     {
-        if (this->pageMove) return;
+        if (this->pageMove) {
+            this->tx = tx;
+            this->ty = ty;
+            return;
+        }
         this->lastMoveX = (tx - this->tx) * 128;
         this->lastMoveY = (ty - this->ty) * 128;
 
