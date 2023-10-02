@@ -1,4 +1,4 @@
-# 東方BGM on VGS for RaspberryPi Pico
+# [WIP] 東方BGM on VGS for RaspberryPi Pico
 
 ## WIP Status
 
