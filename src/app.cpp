@@ -647,12 +647,12 @@ class SongListView : public View
 
     void correctOverscroll()
     {
-        if (0 == this->flingY) {
-            if (0 < this->scrollTarget || this->contentHeight < pos.h) {
-                this->scrollTarget = 0;
-            } else if (this->scrollTarget < this->scrollBottom) {
-                this->scrollTarget = this->scrollBottom;
-            }
+        if (0 < this->scrollTarget || this->contentHeight < pos.h) {
+            this->scrollTarget = 0;
+            this->flingY = 0;
+        } else if (this->scrollTarget < this->scrollBottom) {
+            this->scrollTarget = this->scrollBottom;
+            this->flingY = 0;
         }
     }
 
