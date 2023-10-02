@@ -1,24 +1,8 @@
-# 東方BGM on VGS for RaspberryPi Pico
+# [WIP] 東方BGM on VGS for RaspberryPi Pico
 
 ## WIP Status
 
-- 演奏処理
-  - [ ] トップボード表示 #4
-  - [x] 演奏のキーボード表示 #5
-  - [x] 楽曲リスト更新（再生中をマーク）
-  - [ ] 再生が完了したら次の曲へ移動 #6
-  - [ ] シークバー表示 #7
-  - [ ] シークバー操作によるジャンプ #8
-  - [x] ループ再生時の起点（LABEL位置）のindex値が不正（可変対応できていない）
-- 楽曲リスト操作の不具合修正
-  - [ ] ページスワイプ時に微妙にフラつく
-  - [ ] ページスワイプの完了が微妙に遅く操作性が悪い
-  - [x] タップしてないのに勝手に曲再生される
-- 内部データ構造
-  - [x] ヘッダ部分に曲の長さ、ループ起点のデュレーション情報を格納したい（処理時間短縮のため）
-- songlist.json (tohovgs-cli)
-  - [ ] 曲名に一部全角チルダ（～）が使われている
-    - 波ダッシュ（〜）に置換する必要がある（iconvが失敗する）
+[See the issues](https://github.com/suzukiplan/tohovgs-pico/labels/WIP)
 
 ## About
 
@@ -36,21 +20,28 @@
 
 __（国内で調達できない部品）__
 
-- [RP2040: Type-C 16MB (SoC module)](https://ja.aliexpress.com/item/1005004005660504.html)
+- [RP2040: Type-C 16MB (SoC)](https://ja.aliexpress.com/item/1005004005660504.html)
   - RaspberryPi Pico の開発ボードの互換製品です
   - 国内でも調達できる純正の RaspberryPi Pico だとフラッシュ容量不足のため全曲を入れることはできません
-- [ILI9341: Module with Touch (LCD module)](https://ja.aliexpress.com/item/1005003005413104.html)
-  - このタッチパネルは抵抗膜方式なので、操作性は良くありません
-  - __操作性が良い静電容量方式のタッチパネルのディスプレイドライバへの仕様変更を予定しています__
-- [UDA1334A (DAC module)](https://ja.aliexpress.com/item/1005001993192815.html)
+- [ILI9341+FT6336U: "3.2 with Touch (LCD+CTP)](https://ja.aliexpress.com/item/1005005878590372.html)
+  - 必ず **3.2 with Touch** （または 2.8 with Touch）を選択してください
+    - 3.5 インチモデル（ST7796U）はディスプレイ IC が未対応のため動作しません
+    - タッチ無しのモデルでは操作ができないため選択しないで下さい
+  - タッチ IC に `FT6336`、ディスプレイ IC に `ILI9341` を搭載した LCD であれば、他のものでも正常に動作します
+- [UDA1334A (DAC)](https://ja.aliexpress.com/item/1005001993192815.html)
   - UDA1334A は EOL (生産終了) なので純正品の調達は現在できません
   - 上記リンクは互換製品です
   - UDA1334A でなくても I2S インタフェースの DAC であれば恐らく問題ありません
 
+> - SoC: System on a Chip (システムチップ)
+> - LCD: Liquid Crystal Display (液晶ディスプレイ)
+> - CTP: Capacitive Touch Panel (静電容量式タッチパネル)
+> - DAC: Digital to Analog Converter (D/A変換機)
+
 __（国内で調達可能な部品）__
 
 - [ブレッドボード](https://www.marutsu.co.jp/pc/i/14660/)
-- [ジャンパー線♂♀](https://www.marutsu.co.jp/pc/i/69682/) x 17本
+- [ジャンパー線♂♀](https://www.marutsu.co.jp/pc/i/69682/) x 18本
 
 ### Tools
 
@@ -64,23 +55,32 @@ __（国内で調達可能な部品）__
 
 ブレッドボードとジャンパー線を用いて、各モジュールを下表のように配線してください。
 
-|RP2040 (SoC)|ILI9341 (LCD)|UDA1334A (DAC)|
-|:-|:-|:-|
-|17: `GPIO13`|-|`DIN`|
-|18: `GND`|-|`GND`|
-|19: `GPIO14`|-|`BCLK`|
-|20: `GPIO15`|-|`WSEL`|
-|21: `GPIO16`|`T_DO (MISO)`|-|
-|22: `GPIO17`|`CS`|-|
-|24: `GPIO18`|`SCK`, `T_CLK`|-|
-|25: `GPIO19`|`SDI (MOSI)`, `T_DIN (MOSI)`|-|
-|26: `GPIO20`|`T_CS`|-|
-|29: `GPIO22`|`RESET`|-|
-|32: `GPIO27`|`LED`|-|
-|34: `GPIO28`|`DC`|-|
-|36: `3.3V`|`VCC`|-|
-|38: `GND`|`GND`|-|
-|40: `VOUT (5V)`|-|`VIN`|
+|RP2040 (SoC)|ILI9341 (LCD)|FT6336U (CTP)|UDA1334A (DAC)|
+|:-|:-|:-|:-|
+|6: `GPIO4`|-|`CTP_SDA`|-|
+|7: `GPIO5`|-|`CTP_SCK`|-|
+|17: `GPIO13`|-|-|`DIN`|
+|18: `GND`|-|-|`GND`|
+|19: `GPIO14`|-|-|`BCLK`|
+|20: `GPIO15`|-|-|`WSEL`|
+|21: `GPIO16`|`SDO (MISO)`|-|-|
+|22: `GPIO17`|`LCD_CS`|-|-|
+|24: `GPIO18`|`SCK`|-|-|
+|25: `GPIO19`|`SDI (MOSI)`|-|-|
+|26: `GPIO20`|-|`CTP_RST`|-|
+|27: `GPIO21`|-|`CTP_INT`|-|
+|29: `GPIO22`|`LCD_RST`|-|-|
+|32: `GPIO27`|`LED`|-|-|
+|34: `GPIO28`|`LCD_RS or LCD_DC`|-|-|
+|36: `3.3V`|`VCC`|-|-|
+|38: `GND`|`GND`|-|-|
+|40: `VOUT (5V)`|-|-|`VIN`|
+
+## Install Firmware
+
+1. 最新リリースから firmware.uf2 をダウンロード _(TODO: add link after released)_
+2. パソコンに RP2040 の BOOT (BOOTSEL) ボタンを押しながら USB ケーブルを接続
+3. リムーバブルメディア RPI-RP2 に firmware.uf2 をコピー
 
 ## Build Firmware
 
@@ -164,7 +164,7 @@ __（原作が販売されている流通の例）__
 __（ガイドライン違反と思しき例）__
 
 - 同人ハードウェアの販売流通としては家電のけんちゃん等がよく知られていますが、2023年9月4日時点では家電のけんちゃんでは東方Project原作の取り扱いが無く、許可している流通に明言も無いため __家電のけんちゃんでの販売はNG__ かもしれません。（ただし、既に販売されているものもあるので、私が把握していないだけで実はOKなのかも...う〜ん、分からん）
-- 同人ハードの販売流通手段としてメルカリやヤフオク（C2Cフリーマケットサービス）もよく使われていますが、これについても2023年9月4日時点では原作の取り扱い（公式ショップ等）は無く、許可している流通に明言も無いため __メルカリやヤフオクでの販売もNG__ と解釈できます。
+- 同人ハードの販売流通手段としてメルカリやヤフオク（C2Cフリーマケットサービス）もよく使われていますが、これについても2023年9月4日時点では原作の取り扱い（公式ショップ等）は無く、許可している流通に明言も無いため __メルカリやヤフオクでの販売もNG__ と解釈できるかもしれません。
 
 流通制限の要件規定の解釈は少し複雑なので、正直この解釈が正しいという自信はありません。
 
