@@ -34,7 +34,7 @@ __（国内で調達できない部品）__
   - UDA1334A でなくても I2S インタフェースの DAC であれば恐らく問題ありません
 
 > - SoC: System on a Chip (システムチップ)
-> - LCD: Liquid Crystal Display (液晶)
+> - LCD: Liquid Crystal Display (液晶ディスプレイ)
 > - CTP: Capacitive Touch Panel (静電容量式タッチパネル)
 > - DAC: Digital to Analog Converter (D/A変換機)
 
