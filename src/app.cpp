@@ -800,9 +800,15 @@ class SongListView : public View
             // 現在のアルバムの次の曲を演奏
             this->play(this->playingAlbumIndex, nextSongIndex);
         } else {
-            // 次のアルバムの先頭の曲を演奏
-            int nextAlbumIndex = this->playingAlbumIndex + 1;
-            nextAlbumIndex %= this->albumCount;
+            int nextAlbumIndex;
+            if (albumLockFlag) {
+                // 現在のアルバムの先頭の曲を演奏
+                nextAlbumIndex = this->playingAlbumIndex;
+            } else {
+                // 次のアルバムの先頭の曲を演奏
+                nextAlbumIndex = this->playingAlbumIndex + 1;
+                nextAlbumIndex %= this->albumCount;
+            }
             for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
                 if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
                     this->play(nextAlbumIndex, nextSongIndex);
@@ -938,6 +944,10 @@ class SongListView : public View
             this->tx = tx;
             this->ty = ty;
             return;
+        }
+        if (albumLockFlag) {
+            this->tx = tx;
+            this->flingX = 0;
         }
         this->lastMoveX = (tx - this->tx) * 128;
         this->lastMoveY = (ty - this->ty) * 128;
