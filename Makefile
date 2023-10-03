@@ -3,6 +3,7 @@ ROMS = src/rom_small_font.c\
 	src/rom_bgm.c\
 	src/rom_button_loop1.c\
 	src/rom_button_infinity.c\
+	src/rom_button_volume.c\
 	src/rom_icon_pause.c\
 	src/rom_icon_play.c\
 	src/rom_k8x12S_jisx0201.c\
@@ -70,6 +71,9 @@ src/rom_button_loop1.c: rom/button_loop1.bmp
 
 src/rom_button_infinity.c: rom/button_infinity.bmp
 	tools/bmp2img/bmp2img -t 32x24 rom/button_infinity.bmp >src/rom_button_infinity.c
+
+src/rom_button_volume.c: rom/button_volume.bmp
+	tools/bmp2img/bmp2img -t 32x24 rom/button_volume.bmp >src/rom_button_volume.c
 
 src/rom_icon_pause.c: rom/icon_pause.bmp
 	tools/bmp2img/bmp2img -t 16x16 rom/icon_pause.bmp >src/rom_icon_pause.c

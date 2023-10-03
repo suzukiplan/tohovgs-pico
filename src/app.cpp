@@ -14,6 +14,7 @@
 extern VGS vgs;
 #define abs(x) (x < 0 ? -x : x)
 
+#define VERSION_CODE "BETA VERSION"
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_LIST_BG 0b0000100010100100
@@ -24,6 +25,7 @@ extern VGS vgs;
 #define COLOR_GRAY_DARK 0b0100001000001000
 #define COLOR_PLAYING_SONG 0b0000000001100011
 #define COLOR_RED 0xF800
+#define COLOR_GREEN 0x07E0
 #define COLOR_WHITE 0xFFFF
 
 static void printSmallFont(VGS::GFX* gfx, int x, int y, const char* format, ...)
@@ -44,6 +46,26 @@ static void printSmallFont(VGS::GFX* gfx, int x, int y, const char* format, ...)
             gfx->image(x, y, 4, 8, &rom_small_font[320 + 832]);
         } else if (':' == buf[i]) {
             gfx->image(x, y, 4, 8, &rom_small_font[320 + 832 + 32]);
+        }
+    }
+}
+
+static void printSmallFontT(VGS::GFX* gfx, int x, int y, const char* format, ...)
+{
+    char buf[64];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buf, sizeof(buf), format, args);
+    va_end(args);
+    for (int i = 0; buf[i] && i < 64; i++, x += 4) {
+        if ('0' <= buf[i] && buf[i] <= '9') {
+            gfx->image(x, y, 4, 8, &rom_small_font[(buf[i] - '0') * 32], COLOR_BG);
+        } else if ('A' <= buf[i] && buf[i] <= 'Z') {
+            gfx->image(x, y, 4, 8, &rom_small_font[320 + (buf[i] - 'A') * 32], COLOR_BG);
+        } else if ('.' == buf[i]) {
+            gfx->image(x, y, 4, 8, &rom_small_font[320 + 832], COLOR_BG);
+        } else if (':' == buf[i]) {
+            gfx->image(x, y, 4, 8, &rom_small_font[320 + 832 + 32], COLOR_BG);
         }
     }
 }
@@ -124,23 +146,56 @@ static void printKanji(VGS::GFX* gfx, int x, int y, unsigned short color, const 
     }
 }
 
-typedef struct Position_ {
+class Position
+{
+  public:
     int x;
     int y;
     int w;
     int h;
-} Position;
+
+    Position()
+    {
+        this->set(0, 0, 0, 0);
+    }
+
+    Position(int x, int y, int w, int h)
+    {
+        this->set(x, y, w, h);
+    }
+
+    void set(int x, int y, int w, int h)
+    {
+        this->x = x;
+        this->y = y;
+        this->w = w;
+        this->h = h;
+    }
+
+    inline bool hitCheck(int tx, int ty)
+    {
+        return x <= tx && tx < x + w && y <= ty && ty < y + h;
+    }
+};
+
+enum class DialogType {
+    None,
+    Seeking,
+    MasterVolume,
+};
 
 struct Dialog {
     bool on;
+    DialogType type;
     Position pos;
 } dialog;
 
-static bool showDialog()
+static bool showDialog(DialogType type)
 {
     vgs.gfx.setViewport(dialog.pos.x, dialog.pos.y, dialog.pos.w, dialog.pos.h);
     if (!dialog.on) {
         dialog.on = true;
+        dialog.type = type;
         for (int y = 0; y < dialog.pos.h; y++) {
             for (int x = 0; x < dialog.pos.w; x += 2) {
                 vgs.gfx.pixel(x + (y & 1), y, 0x0000);
@@ -154,6 +209,7 @@ static bool showDialog()
 static void hideDialog()
 {
     dialog.on = false;
+    dialog.type = DialogType::None;
 }
 
 static void showSeekingDialog(int percent)
@@ -163,7 +219,7 @@ static void showSeekingDialog(int percent)
     static const int h = 60;
     int x = (dialog.pos.w - w) / 2;
     int y = (dialog.pos.h - h) / 2;
-    if (showDialog()) {
+    if (showDialog(DialogType::Seeking)) {
         vgs.gfx.startWrite();
         vgs.gfx.boxf(x, y, w, h, COLOR_WHITE);
         vgs.gfx.box(x, y, w, h, COLOR_BLACK);
@@ -182,6 +238,69 @@ static void showSeekingDialog(int percent)
         }
         vgs.gfx.endWrite();
     }
+}
+
+static void showMasterVolumeDialog()
+{
+    static bool touching;
+    static bool ignoreTouch;
+    static const int w = 232;
+    static const int h = 60;
+    int x = (dialog.pos.w - w) / 2;
+    int y = (dialog.pos.h - h) / 2;
+    int masterVolume = vgs.bgm.getMasterVolume();
+
+    vgs.gfx.startWrite();
+    if (showDialog(DialogType::MasterVolume)) {
+        vgs.gfx.boxf(x, y, w, h, COLOR_WHITE);
+        vgs.gfx.boxf(x + 2, y + 2, w - 4, h - 4, COLOR_BLACK);
+        vgs.gfx.box(x, y, w, h, COLOR_BLACK);
+        printKanji(&vgs.gfx, 82, y + 8, COLOR_WHITE, "Master Volume: %3d", masterVolume);
+        for (int i = 0; i < masterVolume; i++) {
+            vgs.gfx.boxf(i * 2 + 20, y + 28, 1, 16, COLOR_GREEN);
+        }
+        touching = false;
+        ignoreTouch = true;
+    }
+
+    if (ignoreTouch) {
+        if (!vgs.io.touch.on) {
+            ignoreTouch = false;
+        }
+    } else if (vgs.io.touch.on) {
+        if (!touching) {
+            if (vgs.io.touch.y < y + dialog.pos.y || y + dialog.pos.y + h < vgs.io.touch.y) {
+                hideDialog();
+            } else {
+                touching = true;
+            }
+        }
+    } else {
+        touching = false;
+    }
+
+    if (touching) {
+        int currentVolume = (vgs.io.touch.x - 20) / 2;
+        if (currentVolume < 1) {
+            currentVolume = 1;
+        } else if (100 < currentVolume) {
+            currentVolume = 100;
+        }
+        if (currentVolume != masterVolume) {
+            vgs.bgm.setMasterVolume(currentVolume);
+            vgs.gfx.boxf(15 * 4 + 82, y + 8, 12, 12, COLOR_BLACK);
+            printKanji(&vgs.gfx, 82, y + 8, COLOR_WHITE, "Master Volume: %3d", currentVolume);
+            int i;
+            for (i = 0; i < currentVolume; i++) {
+                vgs.gfx.boxf(i * 2 + 20, y + 28, 1, 16, COLOR_GREEN);
+            }
+            for (; i < 100; i++) {
+                vgs.gfx.boxf(i * 2 + 20, y + 28, 1, 16, COLOR_BLACK);
+            }
+        }
+    }
+
+    vgs.gfx.endWrite();
 }
 
 class View
@@ -207,29 +326,54 @@ class View
 class TopBoardView : public View
 {
   private:
+    int previousVolume;
+    Position vpos;
+
+    void renderVolumeButton()
+    {
+        auto currentVolume = vgs.bgm.getMasterVolume();
+        if (this->previousVolume != currentVolume) {
+            char buf[8];
+            snprintf(buf, sizeof(buf), "%d", currentVolume);
+            this->gfx->image(vpos.x, vpos.y, vpos.w, vpos.h, rom_button_volume, 0);
+            printSmallFontT(this->gfx, vpos.x + (32 - strlen(buf) * 4) / 2, 20, buf);
+            this->previousVolume = currentVolume;
+        }
+    }
+
     void render()
     {
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        printSmallFont(this->gfx, 4, 4, "SONG NOT SELECTED");
-        printSmallFont(this->gfx, 4, 16, "INDEX     00000  PLAYING 0 OF 0");
+        this->vpos.set(pos.w - 36, 8, 32, 24);
+        printSmallFont(this->gfx, 4, 4, "TOUHOU BGM ON VGS  %s", VERSION_CODE);
+        printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
+        this->renderVolumeButton();
     }
 
   public:
     TopBoardView(VGS::GFX* gfx, int y)
     {
         init(gfx, 0, y, 240, 32);
+        this->previousVolume = -1;
         this->render();
     }
 
-    void update(Song* song)
+    void updateMasterVolume()
     {
+        this->gfx->startWrite();
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-        this->gfx->boxf(4, 2, pos.w - 4, 12, COLOR_BG);
-        printKanji(this->gfx, 4, 2, COLOR_WHITE, "%s", song->name);
+        this->renderVolumeButton();
+        this->gfx->endWrite();
     }
 
-    void onTouchStart(int tx, int ty) override {}
+    void onTouchStart(int tx, int ty) override
+    {
+        if (this->vpos.hitCheck(tx, ty)) {
+            showMasterVolumeDialog();
+        }
+    }
+
     void onTouchMove(int tx, int ty) override {}
     void onTouchEnd(int tx, int ty) override {}
 };
@@ -845,7 +989,6 @@ static Album* albums = (Album*)rom_songlist;
 void onTapSong(Song* song, bool pause)
 {
     if (song) {
-        topBoard->update(song);
         vgs.led(true);
         vgs.bgm.load(&rom_bgm[song->bgmHead], song->bgmSize);
         vgs.led(false);
@@ -880,10 +1023,12 @@ extern "C" void vgs_setup()
     seekbar = new SeekbarView(&vgs.gfx, 320 - 24);
     seekbar->onSeek = [](SeekbarView* view, int max, int progress) {
         if (view == seekbar && 22050 < max) {
+            vgs.gfx.endWriteSimulatorOnly();
             vgs.bgm.seekTo(progress, [](int percent) {
                 showSeekingDialog(percent);
             });
             hideDialog();
+            vgs.gfx.startWriteSimulatorOnly();
             songList->resume();
         }
     };
@@ -891,8 +1036,45 @@ extern "C" void vgs_setup()
     vgs.setFrameRate(20);
 }
 
+static inline void updatePlaying()
+{
+    for (int i = 0; i < 6; i++) {
+        keys[i]->update(vgs.bgm.getTone(i), vgs.bgm.getKey(i));
+    }
+    if (vgs.bgm.isPlayEnd()) {
+        if (seekbar->isInfinity()) {
+            vgs.bgm.seekTo(0, nullptr);
+        } else {
+            songList->playNextSong();
+        }
+    } else if (!seekbar->isInfinity() && 1 <= vgs.bgm.getLoopCount()) {
+        vgs.bgm.fadeout();
+    }
+    seekbar->update(vgs.bgm.getLengthTime(), vgs.bgm.getDurationTime());
+}
+
 extern "C" void vgs_loop()
 {
+    // ダイアログ処理中は通常のループ処理を実行しない
+    if (dialog.on) {
+        switch (dialog.type) {
+            case DialogType::None:
+                hideDialog();
+                break;
+            case DialogType::Seeking:
+                showSeekingDialog(0);
+                break;
+            case DialogType::MasterVolume:
+                showMasterVolumeDialog();
+                updatePlaying();
+                topBoard->updateMasterVolume();
+                break;
+        }
+        if (dialog.on) {
+            return;
+        }
+    }
+
     // タッチイベントを対象Viewへ配送
     static View* touchingView = nullptr;
     static bool prevTouched = false;
@@ -905,6 +1087,8 @@ extern "C" void vgs_loop()
     } else if (!prevTouched && vgs.io.touch.on) {
         if (seekbar->pos.y <= vgs.io.touch.y) {
             touchingView = seekbar;
+        } else if (vgs.io.touch.y < topBoard->pos.h) {
+            touchingView = topBoard;
         } else {
             touchingView = songList;
         }
@@ -922,18 +1106,8 @@ extern "C" void vgs_loop()
     }
 
     // アニメーション対象Viewを再描画
-    songList->move();
-    for (int i = 0; i < 6; i++) {
-        keys[i]->update(vgs.bgm.getTone(i), vgs.bgm.getKey(i));
+    if (!dialog.on) {
+        songList->move();
+        updatePlaying();
     }
-    if (vgs.bgm.isPlayEnd()) {
-        if (seekbar->isInfinity()) {
-            vgs.bgm.seekTo(0, nullptr);
-        } else {
-            songList->playNextSong();
-        }
-    } else if (!seekbar->isInfinity() && 1 <= vgs.bgm.getLoopCount()) {
-        vgs.bgm.fadeout();
-    }
-    seekbar->update(vgs.bgm.getLengthTime(), vgs.bgm.getDurationTime());
 }
