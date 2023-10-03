@@ -76,6 +76,8 @@ __（国内で調達可能な部品）__
 |38: `GND`|`GND`|-|-|
 |40: `VOUT (5V)`|-|-|`VIN`|
 
+![img/connected.jpeg](img/connected.jpeg)
+
 ## Install Firmware
 
 1. 最新リリースから firmware.uf2 をダウンロード _(TODO: add link after released)_
