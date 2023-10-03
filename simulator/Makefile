@@ -7,6 +7,8 @@ OBJECTS = vgssdk_sdl2.o\
 	rom_bgm.o\
 	rom_k8x12S_jisx0201.o\
 	rom_k8x12S_jisx0208.o\
+	rom_icon_pause.o\
+	rom_icon_play.o\
 	rom_small_font.o\
 	rom_songlist.o\
 	vgstone.o\
@@ -42,6 +44,12 @@ rom_k8x12S_jisx0201.o: ../src/rom_k8x12S_jisx0201.c ${HEADERS}
 
 rom_k8x12S_jisx0208.o: ../src/rom_k8x12S_jisx0208.c ${HEADERS}
 	${CC} ../src/rom_k8x12S_jisx0208.c
+
+rom_icon_pause.o: ../src/rom_icon_pause.c ${HEADERS}
+	${CC} ../src/rom_icon_pause.c
+
+rom_icon_play.o: ../src/rom_icon_play.c ${HEADERS}
+	${CC} ../src/rom_icon_play.c
 
 rom_small_font.o: ../src/rom_small_font.c ${HEADERS}
 	${CC} ../src/rom_small_font.c
