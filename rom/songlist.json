@@ -2,6 +2,25 @@
     "version": "2023.06.08",
     "albums": [
         {
+            "appleId": "1437764534",
+            "albumId": "hourai",
+            "name": "蓬莱人形",
+            "formalName": "蓬莱人形　〜 Dolls in Pseudo Paradise",
+            "copyright": "(c)2002 上海アリス幻樂団",
+            "compatColor": 196,
+            "defaultLocked": true,
+            "songs": [
+                {
+                    "appleId": "1437764535",
+                    "mml": "HOURAI-01",
+                    "ver": 0,
+                    "loop": 0,
+                    "name": "蓬莱伝説",
+                    "english": "Legend of Hourai"
+                }
+            ]
+        },
+        {
             "appleId": "1581515718",
             "albumId": "th06",
             "name": "東方紅魔郷",
