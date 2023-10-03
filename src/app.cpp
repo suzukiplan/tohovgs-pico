@@ -385,10 +385,13 @@ class SeekbarView : public View
     }
 
   public:
+    void (*onSeek)(SeekbarView* view, int max, int progress);
+
     SeekbarView(VGS::GFX* gfx, int y)
     {
         init(gfx, 0, y, 240, 24);
         this->movingProgress = false;
+        this->onSeek = nullptr;
         this->updateProgress(0, 0);
     }
 
@@ -410,12 +413,7 @@ class SeekbarView : public View
     void onTouchEnd(int tx, int ty) override
     {
         this->movingProgress = false;
-        if (22050 < this->max) {
-            vgs.bgm.seekTo(this->progress, [](int percent) {
-                showSeekingDialog(percent);
-            });
-            hideDialog();
-        }
+        if (this->onSeek) this->onSeek(this, this->max, this->progress);
     }
 
     void update(int max, int progress)
@@ -433,6 +431,7 @@ class SongListView : public View
     Song playingSong;
     int playingAlbumIndex;
     int playingSongIndex;
+    bool pause;
     int albumCount;
     int albumPos;
     VGS::GFX* sprite;
@@ -461,7 +460,7 @@ class SongListView : public View
         this->gfx->endWrite();
     }
 
-    Song* hitCheck(Album* album, int ty)
+    bool hitCheck(Album* album, int ty, int* ai, int* si)
     {
         int y = this->scroll / 128;
         y += 8;
@@ -473,19 +472,18 @@ class SongListView : public View
                 if (y < -22) {
                     y += 22;
                 } else if (pos.h <= y) {
-                    return nullptr;
+                    return false;
                 } else {
                     if (y < ty && ty < y + 20) {
-                        memcpy(&this->playingSong, song, sizeof(Song));
-                        this->playingAlbumIndex = this->albumPos;
-                        this->playingSongIndex = i;
-                        return &this->playingSong;
+                        *ai = this->albumPos;
+                        *si = i;
+                        return true;
                     }
                     y += 22;
                 }
             }
         }
-        return nullptr;
+        return false;
     }
 
     int renderContent(int ai, int x, int y)
@@ -514,14 +512,16 @@ class SongListView : public View
                 }
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
                     this->sprite->boxf(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
+                    this->sprite->image(x + 10, y + 2, 16, 16, this->pause ? rom_icon_pause : rom_icon_play, 0x0000);
+                    printKanji(this->sprite, x + 26, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 } else {
                     this->sprite->boxf(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
+                    printKanji(this->sprite, x + 10, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 }
                 this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
                 this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
                 this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
                 this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
-                printKanji(this->sprite, x + 10, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 y += 22;
             }
         }
@@ -578,10 +578,16 @@ class SongListView : public View
 
     void play(int ai, int si)
     {
-        memcpy(&this->playingSong, &this->albums[ai].songs[si], sizeof(this->playingSong));
-        this->playingAlbumIndex = ai;
-        this->playingSongIndex = si;
-        this->onTapSong(&this->playingSong);
+        if (ai == this->playingAlbumIndex && si == this->playingSongIndex) {
+            this->pause = !this->pause;
+            this->onTapSong(nullptr, this->pause);
+        } else {
+            memcpy(&this->playingSong, &this->albums[ai].songs[si], sizeof(this->playingSong));
+            this->playingAlbumIndex = ai;
+            this->playingSongIndex = si;
+            this->pause = false;
+            this->onTapSong(&this->playingSong, this->pause);
+        }
     }
 
   public:
@@ -599,7 +605,7 @@ class SongListView : public View
         this->render();
     }
 
-    void (*onTapSong)(Song* song);
+    void (*onTapSong)(Song* song, bool pause);
 
     void playNextSong()
     {
@@ -723,6 +729,11 @@ class SongListView : public View
         this->render();
     }
 
+    void resume()
+    {
+        this->pause = false;
+    }
+
     void onTouchStart(int tx, int ty) override
     {
         if (this->pageMove) return;
@@ -791,9 +802,9 @@ class SongListView : public View
         if (1 < this->touchFrames && abs(this->scrollTotal) < 512 && abs(this->swipeTotal) < 512) {
             this->flingY = 0;
             this->flingX = 0;
-            auto tapped = this->hitCheck(&this->albums[this->albumPos], ty);
-            if (tapped) {
-                this->onTapSong(tapped);
+            int ai, si;
+            if (this->hitCheck(&this->albums[this->albumPos], ty, &ai, &si)) {
+                this->play(ai, si);
             }
         } else {
             this->flingY = this->lastMoveY;
@@ -810,13 +821,19 @@ static SongListView* songList;
 static SeekbarView* seekbar;
 static Album* albums = (Album*)rom_songlist;
 
-void onTapSong(Song* song)
+void onTapSong(Song* song, bool pause)
 {
     if (song) {
         topBoard->update(song);
         vgs.led(true);
         vgs.bgm.load(&rom_bgm[song->bgmHead], song->bgmSize);
         vgs.led(false);
+    } else {
+        if (pause) {
+            vgs.bgm.pause();
+        } else {
+            vgs.bgm.resume();
+        }
     }
 }
 
@@ -840,7 +857,15 @@ extern "C" void vgs_setup()
     memcpy(&dialog.pos, &songList->pos, sizeof(Position));
     songList->onTapSong = onTapSong;
     seekbar = new SeekbarView(&vgs.gfx, 320 - 24);
-
+    seekbar->onSeek = [](SeekbarView* view, int max, int progress) {
+        if (view == seekbar && 22050 < max) {
+            vgs.bgm.seekTo(progress, [](int percent) {
+                showSeekingDialog(percent);
+            });
+            hideDialog();
+            songList->resume();
+        }
+    };
     vgs.gfx.endWrite();
     vgs.setFrameRate(20);
 }
