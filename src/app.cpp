@@ -642,9 +642,30 @@ class SongListView : public View
         this->gfx->endWrite();
     }
 
-    bool hitCheckAll(int ty, int* ai, int* si)
+    bool hitCheckAll(int ty, int* aiResult, int* si)
     {
-        return false; // todo
+        int y = this->scroll / 128;
+        y += 4;
+        for (int ai = 0; ai < this->albumCount; ai++) {
+            for (int i = 0; i < 32; i++) {
+                auto song = &this->albums[ai].songs[i];
+                if (song->name[0]) {
+                    if (y < -22) {
+                        y += 22;
+                    } else if (pos.h <= y) {
+                        return false;
+                    } else {
+                        if (y < ty && ty < y + 20) {
+                            *aiResult = ai;
+                            *si = i;
+                            return true;
+                        }
+                        y += 22;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     bool hitCheck(Album* album, int ty, int* ai, int* si)
