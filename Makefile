@@ -92,7 +92,7 @@ src/rom_icon_play.c: rom/icon_play.bmp
 	tools/bmp2img/bmp2img -t 16x16 rom/icon_play.bmp >src/rom_icon_play.c
 
 src/rom_scroll_bar.c: rom/scroll_bar.bmp
-	tools/bmp2img/bmp2img -t 8x16 rom/scroll_bar.bmp >src/rom_scroll_bar.c
+	tools/bmp2img/bmp2img -t 8x24 rom/scroll_bar.bmp >src/rom_scroll_bar.c
 
 src/rom_scroll_end.c: rom/scroll_end.bmp
 	tools/bmp2img/bmp2img -t 8x8 rom/scroll_end.bmp >src/rom_scroll_end.c

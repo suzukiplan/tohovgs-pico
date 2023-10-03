@@ -14,6 +14,8 @@ OBJECTS = vgssdk_sdl2.o\
 	rom_button_swipe_off.o\
 	rom_icon_pause.o\
 	rom_icon_play.o\
+	rom_scroll_bar.o\
+	rom_scroll_end.o\
 	rom_small_font.o\
 	rom_songlist.o\
 	vgstone.o\

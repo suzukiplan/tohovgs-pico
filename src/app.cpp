@@ -12,7 +12,7 @@
 #include <string.h>
 
 extern VGS vgs;
-static bool albumLockFlag = false;
+static bool allSongFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
 #define VERSION_CODE "BETA VERSION"
@@ -344,9 +344,9 @@ class TopBoardView : public View
         }
     }
 
-    void renderAlbumLockButton()
+    void renderListModeButton()
     {
-        this->gfx->image(apos.x, apos.y, apos.w, apos.h, albumLockFlag ? rom_button_swipe_off : rom_button_swipe_on, 0);
+        this->gfx->image(apos.x, apos.y, apos.w, apos.h, allSongFlag ? rom_button_swipe_off : rom_button_swipe_on, 0);
     }
 
     void render()
@@ -358,7 +358,7 @@ class TopBoardView : public View
         printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
-        this->renderAlbumLockButton();
+        this->renderListModeButton();
     }
 
   public:
@@ -382,10 +382,10 @@ class TopBoardView : public View
         if (this->vpos.hitCheck(tx, ty)) {
             showMasterVolumeDialog();
         } else if (this->apos.hitCheck(tx, ty)) {
-            albumLockFlag = !albumLockFlag;
+            allSongFlag = !allSongFlag;
             this->gfx->startWrite();
             this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
-            this->renderAlbumLockButton();
+            this->renderListModeButton();
             this->gfx->endWrite();
         }
     }
@@ -633,12 +633,18 @@ class SongListView : public View
     bool isSwipe;
     int pageMove;
     int touchFrames;
+    bool isAllSong;
 
     inline void transferSprite()
     {
         this->gfx->startWrite();
         this->sprite->push(0, 0);
         this->gfx->endWrite();
+    }
+
+    bool hitCheckAll(int ty, int* ai, int* si)
+    {
+        return false; // todo
     }
 
     bool hitCheck(Album* album, int ty, int* ai, int* si)
@@ -667,17 +673,8 @@ class SongListView : public View
         return false;
     }
 
-    int renderContent(int ai, int x, int y)
+    int renderSongs(int ai, int x, int y, int w)
     {
-        y += 8;
-        if (-12 < y) {
-            printKanji(this->sprite, x + 4, y, COLOR_WHITE, "%s", this->albums[ai].name);
-        }
-        y += 16;
-        if (-12 < y) {
-            printKanji(this->sprite, x + pos.w - strlen(this->albums[ai].copyright) * 4 - 4, y, COLOR_WHITE, "%s", this->albums[ai].copyright);
-        }
-        y += 24;
         for (int i = 0; i < 32; i++) {
             if (this->albums[ai].songs[i].name[0]) {
                 if (y < -22) {
@@ -692,21 +689,45 @@ class SongListView : public View
                     }
                 }
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
-                    this->sprite->boxf(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
+                    this->sprite->boxf(x + 6, y, w - 12, 20, COLOR_PLAYING_SONG);
                     this->sprite->image(x + 10, y + 2, 16, 16, this->pause ? rom_icon_pause : rom_icon_play, 0x0000);
-                    this->sprite->box(x + 6, y, pos.w - 12, 20, COLOR_PLAYING);
+                    this->sprite->box(x + 6, y, w - 12, 20, COLOR_PLAYING);
                     printKanji(this->sprite, x + 26, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 } else {
-                    this->sprite->boxf(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
+                    this->sprite->boxf(x + 6, y, w - 12, 20, this->albums[ai].color);
                     this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
-                    this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
-                    this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
-                    this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
+                    this->sprite->lineH(x + 6, y + 19, w - 12, COLOR_BLACK);
+                    this->sprite->lineV(x + w - 6, y, 20, COLOR_BLACK);
+                    this->sprite->lineH(x + 6, y, w - 12, COLOR_GRAY);
                     printKanji(this->sprite, x + 10, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 }
                 y += 22;
             }
         }
+        return y;
+    }
+
+    int renderAllContents(int y)
+    {
+        y += 4;
+        for (int ai = 0; ai < this->albumCount; ai++) {
+            y = renderSongs(ai, 0, y, pos.w - 8);
+        }
+        return y + 4;
+    }
+
+    int renderContent(int ai, int x, int y)
+    {
+        y += 8;
+        if (-12 < y) {
+            printKanji(this->sprite, x + 4, y, COLOR_WHITE, "%s", this->albums[ai].name);
+        }
+        y += 16;
+        if (-12 < y) {
+            printKanji(this->sprite, x + pos.w - strlen(this->albums[ai].copyright) * 4 - 4, y, COLOR_WHITE, "%s", this->albums[ai].copyright);
+        }
+        y += 24;
+        y = this->renderSongs(ai, x, y, pos.w);
         y += 4;
         if (y < pos.h) {
             printKanji(this->sprite, x + 4, y, COLOR_WHITE, "Composed by ZUN.");
@@ -734,26 +755,48 @@ class SongListView : public View
         return y + 20;
     }
 
+    void renderScrollBar()
+    {
+        this->sprite->boxf(pos.w - 8, 8, 8, pos.h - 16, COLOR_GRAY_DARK);
+        int max = pos.h - 16 - 24;
+        int bottom = this->contentHeight - this->pos.h;
+        if (0 != bottom) {
+            this->sprite->image(pos.w - 8, -this->scrollTarget / bottom * max / 128 + 8, 8, 24, rom_scroll_bar);
+        }
+        this->sprite->image(pos.w - 8, 0, 8, 8, rom_scroll_end);
+        this->sprite->image(pos.w - 8, pos.h - 8, 8, 8, rom_scroll_end);
+    }
+
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         int x = this->swipe / 128;
         int y = this->scroll / 128;
         this->sprite->clear(COLOR_LIST_BG);
-        if (this->contentHeight) {
-            this->renderContent(this->albumPos, x, y);
+        if (this->isAllSong) {
+            if (this->contentHeight) {
+                this->renderAllContents(y);
+            } else {
+                this->contentHeight = this->renderAllContents(y);
+                this->scrollBottom = (pos.h - this->contentHeight) * 128;
+            }
+            this->renderScrollBar();
         } else {
-            this->contentHeight = this->renderContent(this->albumPos, x, y);
-            this->scrollBottom = (pos.h - this->contentHeight) * 128;
-        }
-        if (x < 0) {
-            int pos = this->albumPos + 1;
-            pos %= this->albumCount;
-            this->renderContent(pos, x + 240, 0);
-        } else if (0 < x) {
-            int pos = this->albumPos - 1;
-            if (pos < 0) pos = this->albumCount - 1;
-            this->renderContent(pos, x - 240, 0);
+            if (this->contentHeight) {
+                this->renderContent(this->albumPos, x, y);
+            } else {
+                this->contentHeight = this->renderContent(this->albumPos, x, y);
+                this->scrollBottom = (pos.h - this->contentHeight) * 128;
+            }
+            if (x < 0) {
+                int pos = this->albumPos + 1;
+                pos %= this->albumCount;
+                this->renderContent(pos, x + 240, 0);
+            } else if (0 < x) {
+                int pos = this->albumPos - 1;
+                if (pos < 0) pos = this->albumCount - 1;
+                this->renderContent(pos, x - 240, 0);
+            }
         }
         this->transferSprite();
     }
@@ -778,6 +821,7 @@ class SongListView : public View
         this->albums = albums;
         this->albumCount = albumCount;
         this->albumPos = 0;
+        this->isAllSong = false;
         this->resetVars();
         init(gfx, 0, y, 240, h);
         this->sprite = new VGS::GFX(pos.w, pos.h);
@@ -785,6 +829,19 @@ class SongListView : public View
         this->playingAlbumIndex = -1;
         this->playingSongIndex = -1;
         this->render();
+    }
+
+    void setAllSongMode(bool on)
+    {
+        if (on && this->isAllSong) {
+            return;
+        } else if (!on && !this->isAllSong) {
+            return;
+        }
+        this->isAllSong = on;
+        this->contentHeight = 0;
+        this->scroll = 0;
+        this->scrollTarget = 0;
     }
 
     void (*onTapSong)(Song* song, bool pause);
@@ -802,15 +859,9 @@ class SongListView : public View
             // 現在のアルバムの次の曲を演奏
             this->play(this->playingAlbumIndex, nextSongIndex);
         } else {
-            int nextAlbumIndex;
-            if (albumLockFlag) {
-                // 現在のアルバムの先頭の曲を演奏
-                nextAlbumIndex = this->playingAlbumIndex;
-            } else {
-                // 次のアルバムの先頭の曲を演奏
-                nextAlbumIndex = this->playingAlbumIndex + 1;
-                nextAlbumIndex %= this->albumCount;
-            }
+            // 次のアルバムの先頭の曲を演奏
+            int nextAlbumIndex = this->playingAlbumIndex + 1;
+            nextAlbumIndex %= this->albumCount;
             for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
                 if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
                     this->play(nextAlbumIndex, nextSongIndex);
@@ -947,7 +998,7 @@ class SongListView : public View
             this->ty = ty;
             return;
         }
-        if (albumLockFlag) {
+        if (this->isAllSong) {
             this->tx = tx;
             this->flingX = 0;
         }
@@ -995,8 +1046,14 @@ class SongListView : public View
             this->flingY = 0;
             this->flingX = 0;
             int ai, si;
-            if (this->hitCheck(&this->albums[this->albumPos], ty, &ai, &si)) {
-                this->play(ai, si);
+            if (this->isAllSong) {
+                if (this->hitCheckAll(ty, &ai, &si)) {
+                    this->play(ai, si);
+                }
+            } else {
+                if (this->hitCheck(&this->albums[this->albumPos], ty, &ai, &si)) {
+                    this->play(ai, si);
+                }
             }
         } else {
             this->flingY = this->lastMoveY;
@@ -1134,6 +1191,7 @@ extern "C" void vgs_loop()
 
     // アニメーション対象Viewを再描画
     if (!dialog.on) {
+        songList->setAllSongMode(allSongFlag);
         songList->move();
         updatePlaying();
     }
