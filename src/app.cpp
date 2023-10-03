@@ -681,12 +681,8 @@ class SongListView : public View
                     y += 22;
                     continue;
                 } else if (pos.h <= y) {
-                    if (this->contentHeight) {
-                        return this->contentHeight;
-                    } else {
-                        y += 22;
-                        continue;
-                    }
+                    y += 22;
+                    continue;
                 }
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
                     this->sprite->boxf(x + 6, y, w - 12, 20, COLOR_PLAYING_SONG);
