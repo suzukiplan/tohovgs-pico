@@ -12,6 +12,7 @@
 #include <string.h>
 
 extern VGS vgs;
+static bool albumLockFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
 #define VERSION_CODE "BETA VERSION"
@@ -26,6 +27,7 @@ extern VGS vgs;
 #define COLOR_PLAYING_SONG 0b0000000001100011
 #define COLOR_RED 0xF800
 #define COLOR_GREEN 0x07E0
+#define COLOR_PLAYING 0xFFFF
 #define COLOR_WHITE 0xFFFF
 
 static void printSmallFont(VGS::GFX* gfx, int x, int y, const char* format, ...)
@@ -328,6 +330,7 @@ class TopBoardView : public View
   private:
     int previousVolume;
     Position vpos;
+    Position apos;
 
     void renderVolumeButton()
     {
@@ -341,14 +344,21 @@ class TopBoardView : public View
         }
     }
 
+    void renderAlbumLockButton()
+    {
+        this->gfx->image(apos.x, apos.y, apos.w, apos.h, albumLockFlag ? rom_button_swipe_off : rom_button_swipe_on, 0);
+    }
+
     void render()
     {
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->vpos.set(pos.w - 36, 8, 32, 24);
+        this->apos.set(pos.w - 72, 8, 32, 24);
         printSmallFont(this->gfx, 4, 4, "TOUHOU BGM ON VGS  %s", VERSION_CODE);
         printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
+        this->renderAlbumLockButton();
     }
 
   public:
@@ -371,6 +381,12 @@ class TopBoardView : public View
     {
         if (this->vpos.hitCheck(tx, ty)) {
             showMasterVolumeDialog();
+        } else if (this->apos.hitCheck(tx, ty)) {
+            albumLockFlag = !albumLockFlag;
+            this->gfx->startWrite();
+            this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+            this->renderAlbumLockButton();
+            this->gfx->endWrite();
         }
     }
 
@@ -678,15 +694,16 @@ class SongListView : public View
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
                     this->sprite->boxf(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
                     this->sprite->image(x + 10, y + 2, 16, 16, this->pause ? rom_icon_pause : rom_icon_play, 0x0000);
+                    this->sprite->box(x + 6, y, pos.w - 12, 20, COLOR_PLAYING);
                     printKanji(this->sprite, x + 26, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 } else {
                     this->sprite->boxf(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
+                    this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
+                    this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
+                    this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
+                    this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
                     printKanji(this->sprite, x + 10, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 }
-                this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
-                this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
-                this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
-                this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
                 y += 22;
             }
         }
@@ -785,9 +802,15 @@ class SongListView : public View
             // 現在のアルバムの次の曲を演奏
             this->play(this->playingAlbumIndex, nextSongIndex);
         } else {
-            // 次のアルバムの先頭の曲を演奏
-            int nextAlbumIndex = this->playingAlbumIndex + 1;
-            nextAlbumIndex %= this->albumCount;
+            int nextAlbumIndex;
+            if (albumLockFlag) {
+                // 現在のアルバムの先頭の曲を演奏
+                nextAlbumIndex = this->playingAlbumIndex;
+            } else {
+                // 次のアルバムの先頭の曲を演奏
+                nextAlbumIndex = this->playingAlbumIndex + 1;
+                nextAlbumIndex %= this->albumCount;
+            }
             for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
                 if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
                     this->play(nextAlbumIndex, nextSongIndex);
@@ -923,6 +946,10 @@ class SongListView : public View
             this->tx = tx;
             this->ty = ty;
             return;
+        }
+        if (albumLockFlag) {
+            this->tx = tx;
+            this->flingX = 0;
         }
         this->lastMoveX = (tx - this->tx) * 128;
         this->lastMoveY = (ty - this->ty) * 128;
