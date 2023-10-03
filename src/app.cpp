@@ -249,33 +249,57 @@ static void showMasterVolumeDialog()
     int x = (dialog.pos.w - w) / 2;
     int y = (dialog.pos.h - h) / 2;
     int masterVolume = vgs.bgm.getMasterVolume();
+
     vgs.gfx.startWrite();
     if (showDialog(DialogType::MasterVolume)) {
         vgs.gfx.boxf(x, y, w, h, COLOR_WHITE);
         vgs.gfx.boxf(x + 2, y + 2, w - 4, h - 4, COLOR_BLACK);
         vgs.gfx.box(x, y, w, h, COLOR_BLACK);
-        printKanji(&vgs.gfx, 92, y + 8, COLOR_WHITE, "Master Volume: %3d", masterVolume);
+        printKanji(&vgs.gfx, 82, y + 8, COLOR_WHITE, "Master Volume: %3d", masterVolume);
         for (int i = 0; i < masterVolume; i++) {
             vgs.gfx.boxf(i * 2 + 20, y + 28, 1, 16, COLOR_GREEN);
         }
         touching = false;
         ignoreTouch = true;
     }
+
     if (ignoreTouch) {
         if (!vgs.io.touch.on) {
             ignoreTouch = false;
         }
     } else if (vgs.io.touch.on) {
-        if (touching) {
-            if (vgs.io.touch.y < y || y + h < vgs.io.touch.y) {
+        if (!touching) {
+            if (vgs.io.touch.y < y + dialog.pos.y || y + dialog.pos.y + h < vgs.io.touch.y) {
                 hideDialog();
+            } else {
+                touching = true;
             }
-        } else {
-            touching = true;
         }
     } else {
         touching = false;
     }
+
+    if (touching) {
+        int currentVolume = (vgs.io.touch.x - 20) / 2;
+        if (currentVolume < 1) {
+            currentVolume = 1;
+        } else if (100 < currentVolume) {
+            currentVolume = 100;
+        }
+        if (currentVolume != masterVolume) {
+            vgs.bgm.setMasterVolume(currentVolume);
+            vgs.gfx.boxf(15 * 4 + 82, y + 8, 12, 12, COLOR_BLACK);
+            printKanji(&vgs.gfx, 82, y + 8, COLOR_WHITE, "Master Volume: %3d", currentVolume);
+            int i;
+            for (i = 0; i < currentVolume; i++) {
+                vgs.gfx.boxf(i * 2 + 20, y + 28, 1, 16, COLOR_GREEN);
+            }
+            for (; i < 100; i++) {
+                vgs.gfx.boxf(i * 2 + 20, y + 28, 1, 16, COLOR_BLACK);
+            }
+        }
+    }
+
     vgs.gfx.endWrite();
 }
 
@@ -308,7 +332,7 @@ class TopBoardView : public View
     void renderVolumeButton()
     {
         auto currentVolume = vgs.bgm.getMasterVolume();
-        if (this->previousVolume) {
+        if (this->previousVolume != currentVolume) {
             char buf[8];
             snprintf(buf, sizeof(buf), "%d", currentVolume);
             this->gfx->image(vpos.x, vpos.y, vpos.w, vpos.h, rom_button_volume, 0);
@@ -333,6 +357,14 @@ class TopBoardView : public View
         init(gfx, 0, y, 240, 32);
         this->previousVolume = -1;
         this->render();
+    }
+
+    void updateMasterVolume()
+    {
+        this->gfx->startWrite();
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+        this->renderVolumeButton();
+        this->gfx->endWrite();
     }
 
     void onTouchStart(int tx, int ty) override
@@ -1035,6 +1067,7 @@ extern "C" void vgs_loop()
             case DialogType::MasterVolume:
                 showMasterVolumeDialog();
                 updatePlaying();
+                topBoard->updateMasterVolume();
                 break;
         }
         if (dialog.on) {
