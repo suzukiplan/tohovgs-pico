@@ -326,10 +326,11 @@ class SeekbarView : public View
     int max;
     int progress;
     bool movingProgress;
+    bool infinity;
 
     void renderDuration(int sec)
     {
-        printSmallFont(this->gfx, 4, (this->pos.h - 8) / 2 + 1, "%02d:%02d", sec / 60, sec % 60);
+        printSmallFont(this->gfx, 3, (this->pos.h - 8) / 2 + 1, "%02d:%02d", sec / 60, sec % 60);
     }
 
     void renderProgress()
@@ -365,6 +366,11 @@ class SeekbarView : public View
         }
     }
 
+    void renderInfinity()
+    {
+        this->gfx->image(pos.w - 32, (pos.h - 24) / 2, 32, 24, this->infinity ? rom_button_infinity : rom_button_loop1, 0);
+    }
+
     void updateProgress(int max, int progress)
     {
         if (max < 1) {
@@ -392,14 +398,22 @@ class SeekbarView : public View
         init(gfx, 0, y, 240, 24);
         this->movingProgress = false;
         this->onSeek = nullptr;
+        this->infinity = false;
         this->updateProgress(0, 0);
+        this->renderInfinity();
     }
 
     void onTouchStart(int tx, int ty) override
     {
+        this->movingProgress = false;
         if (32 <= tx && tx < 32 + 164) {
             this->movingProgress = true;
             this->updateProgress(this->max, (tx - 32) * 100 / 164 * this->max / 100);
+        } else if (32 + 164 < tx) {
+            this->infinity = !this->infinity;
+            gfx->startWrite();
+            this->renderInfinity();
+            gfx->endWrite();
         }
     }
 
@@ -412,8 +426,10 @@ class SeekbarView : public View
 
     void onTouchEnd(int tx, int ty) override
     {
-        this->movingProgress = false;
-        if (this->onSeek) this->onSeek(this, this->max, this->progress);
+        if (this->movingProgress) {
+            this->movingProgress = false;
+            if (this->onSeek) this->onSeek(this, this->max, this->progress);
+        }
     }
 
     void update(int max, int progress)
@@ -421,6 +437,11 @@ class SeekbarView : public View
         if (!this->movingProgress) {
             this->updateProgress(max, progress);
         }
+    }
+
+    inline bool isInfinity()
+    {
+        return this->infinity;
     }
 };
 
@@ -906,9 +927,12 @@ extern "C" void vgs_loop()
         keys[i]->update(vgs.bgm.getTone(i), vgs.bgm.getKey(i));
     }
     if (vgs.bgm.isPlayEnd()) {
-        songList->playNextSong();
-    }
-    if (1 <= vgs.bgm.getLoopCount()) {
+        if (seekbar->isInfinity()) {
+            vgs.bgm.seekTo(0, nullptr);
+        } else {
+            songList->playNextSong();
+        }
+    } else if (!seekbar->isInfinity() && 1 <= vgs.bgm.getLoopCount()) {
         vgs.bgm.fadeout();
     }
     seekbar->update(vgs.bgm.getLengthTime(), vgs.bgm.getDurationTime());
