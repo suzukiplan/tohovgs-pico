@@ -71,6 +71,12 @@ rom_icon_pause.o: ../src/rom_icon_pause.c
 rom_icon_play.o: ../src/rom_icon_play.c
 	${CC} ../src/rom_icon_play.c
 
+rom_scroll_bar.o: ../src/rom_scroll_bar.c
+	${CC} ../src/rom_scroll_bar.c
+
+rom_scroll_end.o: ../src/rom_scroll_end.c
+	${CC} ../src/rom_scroll_end.c
+
 rom_small_font.o: ../src/rom_small_font.c
 	${CC} ../src/rom_small_font.c
 
