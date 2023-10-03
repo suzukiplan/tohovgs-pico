@@ -72,6 +72,14 @@ void VGS::GFX::endWrite()
     }
 }
 
+void VGS::GFX::startWriteSimulatorOnly()
+{
+}
+
+void VGS::GFX::endWriteSimulatorOnly()
+{
+}
+
 int VGS::GFX::getWidth()
 {
     if (this->isVirtual()) {
