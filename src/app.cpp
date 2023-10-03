@@ -449,6 +449,9 @@ class KeyboardView : public View
 
     void update(unsigned char tone, unsigned char key)
     {
+        if (0 == key) {
+            key = 0xFF;
+        }
         if (key == this->key && tone == this->tone) {
             return;
         }
