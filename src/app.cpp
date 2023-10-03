@@ -12,6 +12,7 @@
 #include <string.h>
 
 extern VGS vgs;
+static bool albumLockFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
 #define VERSION_CODE "BETA VERSION"
@@ -328,6 +329,7 @@ class TopBoardView : public View
   private:
     int previousVolume;
     Position vpos;
+    Position apos;
 
     void renderVolumeButton()
     {
@@ -341,14 +343,21 @@ class TopBoardView : public View
         }
     }
 
+    void renderAlbumLockButton()
+    {
+        this->gfx->image(apos.x, apos.y, apos.w, apos.h, albumLockFlag ? rom_button_swipe_off : rom_button_swipe_on, 0);
+    }
+
     void render()
     {
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->vpos.set(pos.w - 36, 8, 32, 24);
+        this->apos.set(pos.w - 72, 8, 32, 24);
         printSmallFont(this->gfx, 4, 4, "TOUHOU BGM ON VGS  %s", VERSION_CODE);
         printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
+        this->renderAlbumLockButton();
     }
 
   public:
@@ -371,6 +380,12 @@ class TopBoardView : public View
     {
         if (this->vpos.hitCheck(tx, ty)) {
             showMasterVolumeDialog();
+        } else if (this->apos.hitCheck(tx, ty)) {
+            albumLockFlag = !albumLockFlag;
+            this->gfx->startWrite();
+            this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+            this->renderAlbumLockButton();
+            this->gfx->endWrite();
         }
     }
 
