@@ -27,6 +27,7 @@ static bool albumLockFlag = false;
 #define COLOR_PLAYING_SONG 0b0000000001100011
 #define COLOR_RED 0xF800
 #define COLOR_GREEN 0x07E0
+#define COLOR_PLAYING 0xFFFF
 #define COLOR_WHITE 0xFFFF
 
 static void printSmallFont(VGS::GFX* gfx, int x, int y, const char* format, ...)
@@ -693,15 +694,16 @@ class SongListView : public View
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
                     this->sprite->boxf(x + 6, y, pos.w - 12, 20, COLOR_PLAYING_SONG);
                     this->sprite->image(x + 10, y + 2, 16, 16, this->pause ? rom_icon_pause : rom_icon_play, 0x0000);
+                    this->sprite->box(x + 6, y, pos.w - 12, 20, COLOR_PLAYING);
                     printKanji(this->sprite, x + 26, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 } else {
                     this->sprite->boxf(x + 6, y, pos.w - 12, 20, this->albums[ai].color);
+                    this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
+                    this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
+                    this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
+                    this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
                     printKanji(this->sprite, x + 10, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 }
-                this->sprite->lineV(x + 6, y, 20, COLOR_GRAY);
-                this->sprite->lineH(x + 6, y + 19, pos.w - 12, COLOR_BLACK);
-                this->sprite->lineV(x + pos.w - 6, y, 20, COLOR_BLACK);
-                this->sprite->lineH(x + 6, y, pos.w - 12, COLOR_GRAY);
                 y += 22;
             }
         }
