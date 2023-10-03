@@ -1,6 +1,8 @@
 ROMS = src/rom_small_font.c\
 	src/rom_songlist.c\
 	src/rom_bgm.c\
+	src/rom_icon_pause.c\
+	src/rom_icon_play.c\
 	src/rom_k8x12S_jisx0201.c\
 	src/rom_k8x12S_jisx0208.c
 
@@ -60,6 +62,12 @@ src/rom_k8x12S_jisx0201.c: rom/k8x12S_jisx0201.bmp
 
 src/rom_k8x12S_jisx0208.c: rom/k8x12S_jisx0208.bmp
 	tools/bmp2img/bmp2img -t 8x12 -m rom/k8x12S_jisx0208.bmp >src/rom_k8x12S_jisx0208.c
+
+src/rom_icon_pause.c: rom/icon_pause.bmp
+	tools/bmp2img/bmp2img -t 16x16 rom/icon_pause.bmp >src/rom_icon_pause.c
+
+src/rom_icon_play.c: rom/icon_play.bmp
+	tools/bmp2img/bmp2img -t 16x16 rom/icon_play.bmp >src/rom_icon_play.c
 
 rom/songlist_utf8.dat: rom/songlist.json
 	tools/sljcnv/sljcnv rom/songlist.json >rom/songlist_utf8.dat
