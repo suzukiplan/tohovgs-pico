@@ -6,6 +6,8 @@ ROMS = src/rom_small_font.c\
 	src/rom_button_volume.c\
 	src/rom_button_swipe_on.c\
 	src/rom_button_swipe_off.c\
+	src/rom_button_sequencial.c\
+	src/rom_button_random.c\
 	src/rom_icon_pause.c\
 	src/rom_icon_play.c\
 	src/rom_scroll_bar.c\
@@ -84,6 +86,12 @@ src/rom_button_swipe_on.c: rom/button_swipe_on.bmp
 
 src/rom_button_swipe_off.c: rom/button_swipe_off.bmp
 	tools/bmp2img/bmp2img -t 32x24 rom/button_swipe_off.bmp >src/rom_button_swipe_off.c
+
+src/rom_button_sequencial.c: rom/button_sequencial.bmp
+	tools/bmp2img/bmp2img -t 32x24 rom/button_sequencial.bmp >src/rom_button_sequencial.c
+
+src/rom_button_random.c: rom/button_random.bmp
+	tools/bmp2img/bmp2img -t 32x24 rom/button_random.bmp >src/rom_button_random.c
 
 src/rom_icon_pause.c: rom/icon_pause.bmp
 	tools/bmp2img/bmp2img -t 16x16 rom/icon_pause.bmp >src/rom_icon_pause.c

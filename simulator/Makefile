@@ -12,6 +12,8 @@ OBJECTS = vgssdk_sdl2.o\
 	rom_button_volume.o\
 	rom_button_swipe_on.o\
 	rom_button_swipe_off.o\
+	rom_button_sequencial.o\
+	rom_button_random.o\
 	rom_icon_pause.o\
 	rom_icon_play.o\
 	rom_scroll_bar.o\
@@ -66,6 +68,12 @@ rom_button_swipe_on.o: ../src/rom_button_swipe_on.c
 
 rom_button_swipe_off.o: ../src/rom_button_swipe_off.c
 	${CC} ../src/rom_button_swipe_off.c
+
+rom_button_sequencial.o: ../src/rom_button_sequencial.c
+	${CC} ../src/rom_button_sequencial.c
+
+rom_button_random.o: ../src/rom_button_random.c
+	${CC} ../src/rom_button_random.c
 
 rom_icon_pause.o: ../src/rom_icon_pause.c
 	${CC} ../src/rom_icon_pause.c
