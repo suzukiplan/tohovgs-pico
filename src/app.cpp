@@ -954,7 +954,15 @@ class SongListView : public View
     {
         this->albums = albums;
         this->albumCount = albumCount;
+        this->albumPos = 0;
+        bool initialPositionDetected = false;
         for (int i = 0; i < albumCount; i++) {
+            if (!initialPositionDetected) {
+                if (strstr(&albums[i].name[32], "Scarlet Devil")) {
+                    initialPositionDetected = true;
+                    this->albumPos = i;
+                }
+            }
             for (int j = 0; j < 32; j++) {
                 if (albums[i].songs[j].name[0]) {
                     this->allSongTable.push_back(new AllSongRecord(i, j));
@@ -963,7 +971,6 @@ class SongListView : public View
                 }
             }
         }
-        this->albumPos = 0;
         this->isAllSong = false;
         this->dragScrollBar = false;
         this->resetVars();
