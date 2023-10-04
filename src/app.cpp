@@ -366,7 +366,7 @@ class TopBoardView : public View
         this->spos.set(pos.w - 36 * 3, 8, 32, 24);
         this->gfx->boxf(0, 0, 8 + 4 * (23 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
         printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
-        printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
+        printSmallFont(this->gfx, 4, 16, "INDEX     00000");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
         this->renderListModeButton();
@@ -379,6 +379,32 @@ class TopBoardView : public View
         init(gfx, 0, y, 240, 32);
         this->previousVolume = -1;
         this->render();
+    }
+
+    void updateNumeric()
+    {
+        static int prevIndex = 0;
+        static int prevLeftTime = 0;
+
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+
+        int index = vgs.bgm.getIndex();
+        if (index != prevIndex) {
+            prevIndex = index;
+            if (index < 100000) {
+                printSmallFont(this->gfx, 4 + 9 * 4, 16, " %05d", index);
+            } else {
+                printSmallFont(this->gfx, 4 + 9 * 4, 16, "%d", index);
+            }
+        }
+
+        int left = (vgs.bgm.getLengthTime() - vgs.bgm.getDurationTime()) / 22050;
+        if (prevLeftTime != left) {
+            prevLeftTime = left;
+            int min = left / 60;
+            int sec = left % 60;
+            printSmallFont(this->gfx, 4 + 10 * 4, 24, "%02d:%02d", min, sec);
+        }
     }
 
     void updateMasterVolume()
@@ -1372,4 +1398,5 @@ extern "C" void vgs_loop()
         songList->move();
         updatePlaying();
     }
+    topBoard->updateNumeric();
 }
