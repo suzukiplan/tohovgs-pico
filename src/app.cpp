@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 extern VGS vgs;
 static bool allSongFlag = false;
@@ -852,9 +853,9 @@ class SongListView : public View
         this->transferSprite();
     }
 
-    void play(int ai, int si)
+    void play(int ai, int si, bool notPause = false)
     {
-        if (ai == this->playingAlbumIndex && si == this->playingSongIndex) {
+        if (!notPause && ai == this->playingAlbumIndex && si == this->playingSongIndex) {
             this->pause = !this->pause;
             this->onTapSong(nullptr, this->pause);
         } else {
@@ -900,25 +901,55 @@ class SongListView : public View
 
     void playNextSong()
     {
-        auto album = &this->albums[this->playingAlbumIndex];
-        int nextSongIndex;
-        for (nextSongIndex = this->playingSongIndex + 1; nextSongIndex < 32; nextSongIndex++) {
-            if (album->songs[nextSongIndex].name[0]) {
-                break;
+        if (shuffleFlag) {
+            int ai;
+            if (this->isAllSong) {
+                ai = rand() % this->albumCount;
+            } else {
+                ai = this->playingAlbumIndex;
             }
-        }
-        if (nextSongIndex < 32) {
-            // 現在のアルバムの次の曲を演奏
-            this->play(this->playingAlbumIndex, nextSongIndex);
-        } else {
-            // 次のアルバムの先頭の曲を演奏
-            int nextAlbumIndex = this->playingAlbumIndex + 1;
-            nextAlbumIndex %= this->albumCount;
-            for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
-                if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
-                    this->play(nextAlbumIndex, nextSongIndex);
+            auto album = &this->albums[ai];
+            int songCount = 0;
+            for (int i = 0; i < 32; i++) {
+                if (album->songs[i].name[0]) {
+                    songCount++;
+                } else {
                     break;
                 }
+            }
+            int si;
+            if (songCount < 2) {
+                si = 0;
+            } else {
+                do {
+                    si = rand() % songCount;
+                } while (ai == this->playingAlbumIndex && si == this->playingSongIndex);
+            }
+            this->play(ai, si, true);
+        } else {
+            auto album = &this->albums[this->playingAlbumIndex];
+            int nextSongIndex;
+            for (nextSongIndex = this->playingSongIndex + 1; nextSongIndex < 32; nextSongIndex++) {
+                if (album->songs[nextSongIndex].name[0]) {
+                    break;
+                }
+            }
+            if (nextSongIndex < 32) {
+                // 現在のアルバムの次の曲を演奏
+                this->play(this->playingAlbumIndex, nextSongIndex, true);
+            } else if (this->isAllSong) {
+                // 次のアルバムの先頭の曲を演奏
+                int nextAlbumIndex = this->playingAlbumIndex + 1;
+                nextAlbumIndex %= this->albumCount;
+                for (nextSongIndex = 0; nextSongIndex < 32; nextSongIndex++) {
+                    if (albums[nextAlbumIndex].songs[nextSongIndex].name[0]) {
+                        this->play(nextAlbumIndex, nextSongIndex);
+                        break;
+                    }
+                }
+            } else {
+                // 現在のアルバムの先頭の曲を演奏
+                this->play(this->playingAlbumIndex, 0, true);
             }
         }
     }
@@ -1157,6 +1188,7 @@ void onTapSong(Song* song, bool pause)
 
 extern "C" void vgs_setup()
 {
+    srand(time(nullptr));
     vgs.gfx.startWrite();
     vgs.gfx.clear(COLOR_BG);
 
