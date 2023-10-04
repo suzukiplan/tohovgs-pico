@@ -899,7 +899,7 @@ class SongListView : public View
 
     void play(int ai, int si, bool notPause = false)
     {
-        if (this->isAllSong || ai == this->playingAlbumIndex || -1 == this->playingAlbumIndex) {
+        if (this->isAllSong || !notPause || this->albumPos == this->playingAlbumIndex) {
             int top, bottom;
             this->getSongPosition(ai, si, &top, &bottom);
             int y = abs(this->scrollTarget / 128);
