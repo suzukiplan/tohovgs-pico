@@ -11,13 +11,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
 
 extern VGS vgs;
 static bool allSongFlag = false;
 static bool shuffleFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
-#define VERSION_CODE "5.0"
+#define VERSION_CODE "5.00"
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_LIST_BG 0b0000100010100100
@@ -365,7 +366,7 @@ class TopBoardView : public View
         this->spos.set(pos.w - 36 * 3, 8, 32, 24);
         this->gfx->boxf(0, 0, 8 + 4 * (23 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
         printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
-        printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
+        printSmallFont(this->gfx, 4, 16, "INDEX     00000");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
         this->renderListModeButton();
@@ -378,6 +379,32 @@ class TopBoardView : public View
         init(gfx, 0, y, 240, 32);
         this->previousVolume = -1;
         this->render();
+    }
+
+    void updateNumeric()
+    {
+        static int prevIndex = 0;
+        static int prevLeftTime = 0;
+
+        this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+
+        int index = vgs.bgm.getIndex();
+        if (index != prevIndex) {
+            prevIndex = index;
+            if (index < 100000) {
+                printSmallFont(this->gfx, 4 + 9 * 4, 16, " %05d", index);
+            } else {
+                printSmallFont(this->gfx, 4 + 9 * 4, 16, "%d", index);
+            }
+        }
+
+        int left = (vgs.bgm.getLengthTime() - vgs.bgm.getDurationTime()) / 22050;
+        if (prevLeftTime != left) {
+            prevLeftTime = left;
+            int min = left / 60;
+            int sec = left % 60;
+            printSmallFont(this->gfx, 4 + 10 * 4, 24, "%02d:%02d", min, sec);
+        }
     }
 
     void updateMasterVolume()
@@ -628,6 +655,18 @@ class SeekbarView : public View
 class SongListView : public View
 {
   private:
+    class AllSongRecord
+    {
+      public:
+        int ai;
+        int si;
+        AllSongRecord(int ai, int si)
+        {
+            this->ai = ai;
+            this->si = si;
+        }
+    };
+    std::vector<AllSongRecord*> allSongTable;
     Album* albums;
     Song playingSong;
     int playingAlbumIndex;
@@ -713,6 +752,35 @@ class SongListView : public View
             }
         }
         return false;
+    }
+
+    void getSongPosition(int ai, int si, int* top, int* bottom)
+    {
+        if (this->isAllSong) {
+            int y = 4;
+            for (int i = 0; i <= ai; i++) {
+                for (int j = 0; j < 32; j++) {
+                    if (i == ai && j == si) {
+                        *top = y;
+                        *bottom = (*top) + 22;
+                        return;
+                    } else if (this->albums[i].songs[j].name[0]) {
+                        y += 22;
+                    }
+                }
+            }
+        } else {
+            int y = 8 + 16 + 24;
+            for (int j = 0; j < 32; j++) {
+                if (j == si) {
+                    *top = 0 == j ? 0 : y;
+                    *bottom = (*top) + 22;
+                    return;
+                } else if (this->albums[ai].songs[j].name[0]) {
+                    y += 22;
+                }
+            }
+        }
     }
 
     int renderSongs(int ai, int x, int y, int w)
@@ -812,8 +880,8 @@ class SongListView : public View
         ty -= 12;
         if (ty < -4) {
             ty = -4;
-        } else if (this->pos.h - 24 < ty) {
-            ty = this->pos.h - 24;
+        } else if (this->pos.h - 4 < ty) {
+            ty = this->pos.h - 4;
         }
         this->scrollTarget = ty * 128;
         this->scrollTarget /= this->pos.h;
@@ -857,6 +925,18 @@ class SongListView : public View
 
     void play(int ai, int si, bool notPause = false)
     {
+        if (this->isAllSong || !notPause || this->albumPos == this->playingAlbumIndex) {
+            int top, bottom;
+            this->getSongPosition(ai, si, &top, &bottom);
+            int y = abs(this->scrollTarget / 128);
+            if (top < y) {
+                this->scrollTarget = -top * 128;
+                this->correctOverscroll();
+            } else if (y + pos.h < bottom) {
+                this->scrollTarget = -(bottom - pos.h) * 128;
+                this->correctOverscroll();
+            }
+        }
         if (!notPause && ai == this->playingAlbumIndex && si == this->playingSongIndex) {
             this->pause = !this->pause;
             this->onTapSong(nullptr, this->pause);
@@ -875,6 +955,22 @@ class SongListView : public View
         this->albums = albums;
         this->albumCount = albumCount;
         this->albumPos = 0;
+        bool initialPositionDetected = false;
+        for (int i = 0; i < albumCount; i++) {
+            if (!initialPositionDetected) {
+                if (strstr(&albums[i].name[32], "Scarlet Devil")) {
+                    initialPositionDetected = true;
+                    this->albumPos = i;
+                }
+            }
+            for (int j = 0; j < 32; j++) {
+                if (albums[i].songs[j].name[0]) {
+                    this->allSongTable.push_back(new AllSongRecord(i, j));
+                } else {
+                    break;
+                }
+            }
+        }
         this->isAllSong = false;
         this->dragScrollBar = false;
         this->resetVars();
@@ -904,30 +1000,40 @@ class SongListView : public View
     void playNextSong()
     {
         if (shuffleFlag) {
-            int ai;
             if (this->isAllSong) {
-                ai = rand() % this->albumCount;
-            } else {
-                ai = this->playingAlbumIndex;
-            }
-            auto album = &this->albums[ai];
-            int songCount = 0;
-            for (int i = 0; i < 32; i++) {
-                if (album->songs[i].name[0]) {
-                    songCount++;
+                int ai, si;
+                if (1 < this->allSongTable.size()) {
+                    do {
+                        auto rec = this->allSongTable[rand() % this->allSongTable.size()];
+                        ai = rec->ai;
+                        si = rec->si;
+                    } while (ai == this->playingAlbumIndex && si == this->playingSongIndex);
                 } else {
-                    break;
+                    ai = this->playingAlbumIndex;
+                    si = this->playingSongIndex;
                 }
-            }
-            int si;
-            if (songCount < 2) {
-                si = 0;
+                this->play(ai, si, true);
             } else {
-                do {
-                    si = rand() % songCount;
-                } while (ai == this->playingAlbumIndex && si == this->playingSongIndex);
+                int ai = this->playingAlbumIndex;
+                auto album = &this->albums[ai];
+                int songCount = 0;
+                for (int i = 0; i < 32; i++) {
+                    if (album->songs[i].name[0]) {
+                        songCount++;
+                    } else {
+                        break;
+                    }
+                }
+                int si;
+                if (songCount < 2) {
+                    si = 0;
+                } else {
+                    do {
+                        si = rand() % songCount;
+                    } while (si == this->playingSongIndex);
+                }
+                this->play(ai, si, true);
             }
-            this->play(ai, si, true);
         } else {
             auto album = &this->albums[this->playingAlbumIndex];
             int nextSongIndex;
@@ -1299,4 +1405,5 @@ extern "C" void vgs_loop()
         songList->move();
         updatePlaying();
     }
+    topBoard->updateNumeric();
 }
