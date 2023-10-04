@@ -13,6 +13,7 @@
 
 extern VGS vgs;
 static bool allSongFlag = false;
+static bool shuffleFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
 #define VERSION_CODE "5.0"
@@ -331,6 +332,7 @@ class TopBoardView : public View
     int previousVolume;
     Position vpos;
     Position apos;
+    Position spos;
 
     void renderVolumeButton()
     {
@@ -349,16 +351,24 @@ class TopBoardView : public View
         this->gfx->image(apos.x, apos.y, apos.w, apos.h, allSongFlag ? rom_button_swipe_off : rom_button_swipe_on, 0);
     }
 
+    void renderPlayModeButton()
+    {
+        this->gfx->image(spos.x, spos.y, spos.w, spos.h, shuffleFlag ? rom_button_random : rom_button_sequencial, 0);
+    }
+
     void render()
     {
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->vpos.set(pos.w - 36, 8, 32, 24);
-        this->apos.set(pos.w - 72, 8, 32, 24);
-        printSmallFont(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
+        this->apos.set(pos.w - 36 * 2, 8, 32, 24);
+        this->spos.set(pos.w - 36 * 3, 8, 32, 24);
+        this->gfx->boxf(0, 0, 8 + 4 * (23 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
+        printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
         printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
         this->renderListModeButton();
+        this->renderPlayModeButton();
     }
 
   public:
@@ -386,6 +396,12 @@ class TopBoardView : public View
             this->gfx->startWrite();
             this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
             this->renderListModeButton();
+            this->gfx->endWrite();
+        } else if (this->spos.hitCheck(tx, ty)) {
+            shuffleFlag = !shuffleFlag;
+            this->gfx->startWrite();
+            this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
+            this->renderPlayModeButton();
             this->gfx->endWrite();
         }
     }
