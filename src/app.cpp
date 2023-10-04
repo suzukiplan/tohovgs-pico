@@ -364,8 +364,8 @@ class TopBoardView : public View
         this->vpos.set(pos.w - 36, 8, 32, 24);
         this->apos.set(pos.w - 36 * 2, 8, 32, 24);
         this->spos.set(pos.w - 36 * 3, 8, 32, 24);
-        this->gfx->boxf(0, 0, 8 + 4 * (23 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
-        printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
+        this->gfx->boxf(0, 0, 8 + 4 * (18 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
+        printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS %s", VERSION_CODE);
         printSmallFont(this->gfx, 4, 16, "INDEX     00000");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
