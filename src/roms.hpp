@@ -7,6 +7,8 @@ extern "C" {
     extern const unsigned short rom_button_volume[768];
     extern const unsigned short rom_button_swipe_on[768];
     extern const unsigned short rom_button_swipe_off[768];
+    extern const unsigned short rom_button_sequencial[768];
+    extern const unsigned short rom_button_random[768];
     extern const unsigned short rom_icon_pause[256];
     extern const unsigned short rom_icon_play[256];
     extern const unsigned short rom_scroll_bar[192];
