@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
 
 extern VGS vgs;
 static bool allSongFlag = false;
@@ -628,6 +629,18 @@ class SeekbarView : public View
 class SongListView : public View
 {
   private:
+    class AllSongRecord
+    {
+      public:
+        int ai;
+        int si;
+        AllSongRecord(int ai, int si)
+        {
+            this->ai = ai;
+            this->si = si;
+        }
+    };
+    std::vector<AllSongRecord*> allSongTable;
     Album* albums;
     Song playingSong;
     int playingAlbumIndex;
@@ -713,6 +726,35 @@ class SongListView : public View
             }
         }
         return false;
+    }
+
+    void getSongPosition(int ai, int si, int* top, int* bottom)
+    {
+        if (this->isAllSong) {
+            int y = 4;
+            for (int i = 0; i <= ai; i++) {
+                for (int j = 0; j < 32; j++) {
+                    if (i == ai && j == si) {
+                        *top = y;
+                        *bottom = (*top) + 22;
+                        return;
+                    } else if (this->albums[i].songs[j].name[0]) {
+                        y += 22;
+                    }
+                }
+            }
+        } else {
+            int y = 8 + 16 + 24;
+            for (int j = 0; j < 32; j++) {
+                if (j == si) {
+                    *top = 0 == j ? 0 : y;
+                    *bottom = (*top) + 22;
+                    return;
+                } else if (this->albums[ai].songs[j].name[0]) {
+                    y += 22;
+                }
+            }
+        }
     }
 
     int renderSongs(int ai, int x, int y, int w)
@@ -857,6 +899,18 @@ class SongListView : public View
 
     void play(int ai, int si, bool notPause = false)
     {
+        if (this->isAllSong || ai == this->playingAlbumIndex || -1 == this->playingAlbumIndex) {
+            int top, bottom;
+            this->getSongPosition(ai, si, &top, &bottom);
+            int y = abs(this->scrollTarget / 128);
+            if (top < y) {
+                this->scrollTarget = -top * 128;
+                this->correctOverscroll();
+            } else if (y + pos.h < bottom) {
+                this->scrollTarget = -(bottom - pos.h) * 128;
+                this->correctOverscroll();
+            }
+        }
         if (!notPause && ai == this->playingAlbumIndex && si == this->playingSongIndex) {
             this->pause = !this->pause;
             this->onTapSong(nullptr, this->pause);
@@ -874,6 +928,15 @@ class SongListView : public View
     {
         this->albums = albums;
         this->albumCount = albumCount;
+        for (int i = 0; i < albumCount; i++) {
+            for (int j = 0; j < 32; j++) {
+                if (albums[i].songs[j].name[0]) {
+                    this->allSongTable.push_back(new AllSongRecord(i, j));
+                } else {
+                    break;
+                }
+            }
+        }
         this->albumPos = 0;
         this->isAllSong = false;
         this->dragScrollBar = false;
@@ -904,30 +967,40 @@ class SongListView : public View
     void playNextSong()
     {
         if (shuffleFlag) {
-            int ai;
             if (this->isAllSong) {
-                ai = rand() % this->albumCount;
-            } else {
-                ai = this->playingAlbumIndex;
-            }
-            auto album = &this->albums[ai];
-            int songCount = 0;
-            for (int i = 0; i < 32; i++) {
-                if (album->songs[i].name[0]) {
-                    songCount++;
+                int ai, si;
+                if (1 < this->allSongTable.size()) {
+                    do {
+                        auto rec = this->allSongTable[rand() % this->allSongTable.size()];
+                        ai = rec->ai;
+                        si = rec->si;
+                    } while (ai == this->playingAlbumIndex && si == this->playingSongIndex);
                 } else {
-                    break;
+                    ai = this->playingAlbumIndex;
+                    si = this->playingSongIndex;
                 }
-            }
-            int si;
-            if (songCount < 2) {
-                si = 0;
+                this->play(ai, si, true);
             } else {
-                do {
-                    si = rand() % songCount;
-                } while (ai == this->playingAlbumIndex && si == this->playingSongIndex);
+                int ai = this->playingAlbumIndex;
+                auto album = &this->albums[ai];
+                int songCount = 0;
+                for (int i = 0; i < 32; i++) {
+                    if (album->songs[i].name[0]) {
+                        songCount++;
+                    } else {
+                        break;
+                    }
+                }
+                int si;
+                if (songCount < 2) {
+                    si = 0;
+                } else {
+                    do {
+                        si = rand() % songCount;
+                    } while (si == this->playingSongIndex);
+                }
+                this->play(ai, si, true);
             }
-            this->play(ai, si, true);
         } else {
             auto album = &this->albums[this->playingAlbumIndex];
             int nextSongIndex;
