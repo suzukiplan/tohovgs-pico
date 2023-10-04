@@ -880,8 +880,8 @@ class SongListView : public View
         ty -= 12;
         if (ty < -4) {
             ty = -4;
-        } else if (this->pos.h - 24 < ty) {
-            ty = this->pos.h - 24;
+        } else if (this->pos.h - 4 < ty) {
+            ty = this->pos.h - 4;
         }
         this->scrollTarget = ty * 128;
         this->scrollTarget /= this->pos.h;
