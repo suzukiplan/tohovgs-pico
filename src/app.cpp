@@ -1350,6 +1350,14 @@ static inline void updatePlaying()
 
 extern "C" void vgs_loop()
 {
+    // 乱数を揺らす
+    if (vgs.io.touch.on) {
+        int n = (abs(vgs.io.touch.x) * abs(vgs.io.touch.y)) & 7;
+        for (int i = 0; i <= n; i++) {
+            rand();
+        }
+    }
+
     // ダイアログ処理中は通常のループ処理を実行しない
     if (dialog.on) {
         switch (dialog.type) {

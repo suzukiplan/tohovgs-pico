@@ -1,9 +1,9 @@
 # Change Log
 
-## Version 5.00:A
+## [Version 5.00:A](https://github.com/suzukiplan/tohovgs-pico/pull/35)
 
-- bugfix:
-  - https://github.com/suzukiplan/tohovgs-pico/issues/34
+- https://github.com/suzukiplan/tohovgs-pico/issues/34
+- https://github.com/suzukiplan/tohovgs-pico/issues/36
 
 ## Version 5.00
 
