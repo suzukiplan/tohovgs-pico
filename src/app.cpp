@@ -619,6 +619,7 @@ class SeekbarView : public View
         } else if (32 + 164 < tx) {
             this->infinity = !this->infinity;
             gfx->startWrite();
+            gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
             this->renderInfinity();
             gfx->endWrite();
         }
