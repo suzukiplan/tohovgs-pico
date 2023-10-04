@@ -77,7 +77,7 @@ __（日本国内で調達可能な部品）__
 
 1. [最新リリース](https://github.com/suzukiplan/tohovgs-pico/releases) から firmware.uf2 をダウンロード
 2. パソコンに RP2040 の BOOT (BOOTSEL) ボタンを押しながら USB ケーブルを接続
-3. リムーバブルメディア RPI-RP2 に firmware.uf2 をコピー
+3. リムーバブルメディア RPI-RP2 に firmware.uf2 をコピー＆ペースト
 
 ## Build Firmware
 
