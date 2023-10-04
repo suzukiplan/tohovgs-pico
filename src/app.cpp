@@ -717,6 +717,7 @@ class SongListView : public View
 
     int renderSongs(int ai, int x, int y, int w)
     {
+        static int an = 0;
         for (int i = 0; i < 32; i++) {
             if (this->albums[ai].songs[i].name[0]) {
                 if (y < -22) {
@@ -728,7 +729,8 @@ class SongListView : public View
                 }
                 if (this->playingSong.name[0] && this->playingAlbumIndex == ai && i == this->playingSongIndex) {
                     this->sprite->boxf(x + 6, y, w - 12, 20, COLOR_PLAYING_SONG);
-                    this->sprite->image(x + 10, y + 2, 16, 16, this->pause ? rom_icon_pause : rom_icon_play, 0x0000);
+                    this->sprite->image(x + 10, y + 2, 16, 16, this->pause ? rom_icon_pause : &rom_icon_play[256 * an++], 0x0000);
+                    an &= 7;
                     this->sprite->box(x + 6, y, w - 12, 20, COLOR_PLAYING);
                     printKanji(this->sprite, x + 26, y + 4, COLOR_WHITE, "%s", this->albums[ai].songs[i].name);
                 } else {
