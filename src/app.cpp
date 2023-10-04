@@ -15,7 +15,7 @@ extern VGS vgs;
 static bool allSongFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
-#define VERSION_CODE "BETA VERSION"
+#define VERSION_CODE "5.0"
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_LIST_BG 0b0000100010100100
@@ -354,7 +354,7 @@ class TopBoardView : public View
         this->gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
         this->vpos.set(pos.w - 36, 8, 32, 24);
         this->apos.set(pos.w - 72, 8, 32, 24);
-        printSmallFont(this->gfx, 4, 4, "TOUHOU BGM ON VGS  %s", VERSION_CODE);
+        printSmallFont(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
         printSmallFont(this->gfx, 4, 16, "INDEX     00000  LOOP 0");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
