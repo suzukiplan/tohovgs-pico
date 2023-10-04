@@ -18,7 +18,7 @@ __（日本国内で調達できない部品）__
 - [RP2040: Type-C 16MB (SoC)](https://ja.aliexpress.com/item/1005004005660504.html)
   - RaspberryPi Pico の開発ボードの互換製品です
   - 国内でも調達できる純正の RaspberryPi Pico だとフラッシュ容量不足のため全曲を入れることはできません
-- [ILI9341+FT6336U: "3.2 with Touch (LCD+CTP)](https://ja.aliexpress.com/item/1005005878590372.html)
+- [MSP3223: ILI9341+FT6336U "3.2 with Touch (LCD+CTP)](https://ja.aliexpress.com/item/1005005878590372.html)
   - 必ず **3.2 with Touch** （または 2.8 with Touch）を選択してください
     - 3.5 インチモデル（ST7796U）はディスプレイ IC が未対応のため動作しません
     - タッチ無しのモデルでは操作ができないため選択しないで下さい
