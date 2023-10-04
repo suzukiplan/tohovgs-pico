@@ -637,6 +637,7 @@ class SongListView : public View
     int pageMove;
     int touchFrames;
     bool isAllSong;
+    bool dragScrollBar;
 
     inline void transferSprite()
     {
@@ -787,6 +788,20 @@ class SongListView : public View
         this->sprite->image(pos.w - 8, pos.h - 8, 8, 8, rom_scroll_end);
     }
 
+    void dragTo(int ty)
+    {
+        ty -= 12;
+        if (ty < -4) {
+            ty = -4;
+        } else if (this->pos.h - 24 < ty) {
+            ty = this->pos.h - 24;
+        }
+        this->scrollTarget = ty * 128;
+        this->scrollTarget /= this->pos.h;
+        this->scrollTarget *= this->contentHeight;
+        this->scrollTarget = 0 - this->scrollTarget;
+    }
+
     void render()
     {
         gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
@@ -842,6 +857,7 @@ class SongListView : public View
         this->albumCount = albumCount;
         this->albumPos = 0;
         this->isAllSong = false;
+        this->dragScrollBar = false;
         this->resetVars();
         init(gfx, 0, y, 240, h);
         this->sprite = new VGS::GFX(pos.w, pos.h);
@@ -996,6 +1012,13 @@ class SongListView : public View
     void onTouchStart(int tx, int ty) override
     {
         if (this->pageMove) return;
+        if (this->isAllSong && pos.w - 16 < tx) {
+            this->dragScrollBar = true;
+            this->dragTo(ty);
+            return;
+        } else {
+            this->dragScrollBar = false;
+        }
         this->flingX = 0;
         this->flingY = 0;
         this->lastMoveX = 0;
@@ -1016,6 +1039,10 @@ class SongListView : public View
         if (this->pageMove) {
             this->tx = tx;
             this->ty = ty;
+            return;
+        }
+        if (this->dragScrollBar) {
+            this->dragTo(ty);
             return;
         }
         if (this->isAllSong) {
@@ -1060,7 +1087,14 @@ class SongListView : public View
 
     void onTouchEnd(int tx, int ty) override
     {
-        if (this->pageMove) return;
+        if (this->pageMove) {
+            return;
+        }
+        if (this->dragScrollBar) {
+            this->dragScrollBar = false;
+            this->correctOverscroll();
+            return;
+        }
 
         if (1 < this->touchFrames && abs(this->scrollTotal) < 512 && abs(this->swipeTotal) < 512) {
             this->flingY = 0;
