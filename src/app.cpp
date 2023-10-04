@@ -18,7 +18,7 @@ static bool allSongFlag = false;
 static bool shuffleFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
-#define VERSION_CODE "5.0"
+#define VERSION_CODE "5.00"
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_LIST_BG 0b0000100010100100
