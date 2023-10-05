@@ -140,10 +140,10 @@ make build
 
 |モード設定|動作|
 |:-:|:-|
-|![swipe_on](./img/button_swipe_on.png) + ![seq](./img/button_sequencial.png)|アルバム内でシーケンシャル再生|
-|![swipe_on](./img/button_swipe_on.png) + ![random](./img/button_random.png)|アルバム内でランダム再生|
-|![swipe_off](./img/button_swipe_off.png) + ![seq](./img/button_sequencial.png)|全曲でシーケンシャル再生|
-|![swipe_off](./img/button_swipe_off.png) + ![random](./img/button_random.png)|全曲でランダム再生|
+|![swipe_on](./img/button_swipe_on.png) ![seq](./img/button_sequencial.png)|アルバム内でシーケンシャル再生|
+|![swipe_on](./img/button_swipe_on.png) ![random](./img/button_random.png)|アルバム内でランダム再生|
+|![swipe_off](./img/button_swipe_off.png) ![seq](./img/button_sequencial.png)|全曲でシーケンシャル再生|
+|![swipe_off](./img/button_swipe_off.png) ![random](./img/button_random.png)|全曲でランダム再生|
 
 ## License
 
