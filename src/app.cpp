@@ -247,6 +247,7 @@ static void showSeekingDialog(int percent)
 
 static void showMasterVolumeDialog()
 {
+    static int autoCloseTimer = 0;
     static bool touching;
     static bool ignoreTouch;
     static const int w = 232;
@@ -254,6 +255,14 @@ static void showMasterVolumeDialog()
     int x = (dialog.pos.w - w) / 2;
     int y = (dialog.pos.h - h) / 2;
     int masterVolume = vgs.bgm.getMasterVolume();
+
+    if (autoCloseTimer) {
+        autoCloseTimer--;
+        if (0 == autoCloseTimer) {
+            hideDialog();
+            return;
+        }
+    }
 
     vgs.gfx.startWrite();
     if (showDialog(DialogType::MasterVolume)) {
@@ -266,6 +275,7 @@ static void showMasterVolumeDialog()
         }
         touching = false;
         ignoreTouch = true;
+        autoCloseTimer = 0;
     }
 
     if (ignoreTouch) {
@@ -273,6 +283,7 @@ static void showMasterVolumeDialog()
             ignoreTouch = false;
         }
     } else if (vgs.io.touch.on) {
+        autoCloseTimer = 60;
         if (!touching) {
             if (vgs.io.touch.y < y + dialog.pos.y || y + dialog.pos.y + h < vgs.io.touch.y) {
                 hideDialog();
