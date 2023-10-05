@@ -1,5 +1,7 @@
 # 東方BGM on VGS for RaspberryPi Pico
 
+![top.jpg](img/top.jpg)
+
 ## About
 
 - 本リポジトリでは、同人ハードウェア版 東方BGM on VGS (東方VGS実機版) のファームウェアと組み立て手順を提供します
