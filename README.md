@@ -113,6 +113,38 @@ make
 make build
 ```
 
+## How to Use
+
+### Play and Pause
+
+- 曲名をタップすると再生が開始します
+- 再生中の曲名をタップするとポーズします
+- ポーズ中の曲名をタップするとレジューム（ポーズから復帰）します
+
+### Seek Bar
+
+画面右したのボタン（トグルスイッチ）で 1 ループ再生 or 無限ループの切り替えができます。
+
+|モード設定|動作|
+|:-:|:-|
+|![loop1](./img/button_loop1.png)|1回ループしたらフェードアウト|
+|![infinity](./img/button_infinity.png)|無限ループ|
+
+また、シークバーをスライドすることで演奏開始位置のシークができます。
+
+> 実機でのシーク処理には、RP2040 の CPU 処理性能の関係で 1 分間分をシークするのに 5 〜 10 秒程度の時間を要します。
+
+### Play Mode
+
+画面右上の 2 ボタン（トグルスイッチ）で次のように演奏モードを変更することができます。
+
+|モード設定|動作|
+|:-:|:-|
+|![swipe_on](./img/button_swipe_on.png) + ![seq](./img/button_sequencial.png)|アルバム内でシーケンシャル再生|
+|![swipe_on](./img/button_swipe_on.png) + ![random](./img/button_random.png)|アルバム内でランダム再生|
+|![swipe_off](./img/button_swipe_off.png) + ![seq](./img/button_sequencial.png)|全曲でシーケンシャル再生|
+|![swipe_off](./img/button_swipe_off.png) + ![random](./img/button_random.png)|全曲でランダム再生|
+
 ## License
 
 ### Software
