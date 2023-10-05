@@ -7,7 +7,7 @@
 - 本リポジトリでは、同人ハードウェア版 東方BGM on VGS (東方VGS実機版) のファームウェアと組み立て手順を提供します
 - 東方VGS実機版 は、東方Project二次創作です
 - 東方VGS実機版 は、各自で部品を集めて組み立てるものです
-- [誰でも自由に 東方VGS実機版 を販売できます](#hardware-sales)
+- [誰でも自由に 東方VGS実機版 を販売できます](#hardware-sales-license)
 
 ## Required Parts and Tools
 
@@ -175,13 +175,13 @@ make build
   - License: [MIT](./licenses-copy/vgssdk.txt)
   - `Copyright (c) 2023 Yoji Suzuki.`
 
-### Hardware Sales
+### Hardware Sales License
 
 次の条件を満たす場合、自身が開発した 東方VGS実機版 を販売することを許諾します。
 
 1. [東方Project（本家）の二次創作ガイドライン](https://touhou-project.news/guideline/)に反しないこと
 2. 製品マニュアル等に使用している OSS ライセンスを明示すること
-3. 購入者が自由に製品フラッシュメモリを更新する権利を奪うことを禁じます（具体的には、購入者が本リポジトリから最新のファームウェアに更新できる手段を提供することを必須要件とします）
+3. 購入者が本リポジトリから最新のファームウェアに更新できる手段を提供することを必須要件とします
 4. 販売に関する全ての保証業務（購入者へのサポート等）は、仮に本リポジトリ提供内容の不具合に起因する場合であっても全て販売者の責任で実施すること
 
 可能な限り販売開始前または販売開始後に X (旧 Twitter) で [suzukiplan](https://twitter.com/suzukiplan) をフォローの上、以下のメンションを投げてください。（これは強制ではありません）
