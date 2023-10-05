@@ -286,6 +286,7 @@ static void showMasterVolumeDialog()
         autoCloseTimer = 60;
         if (!touching) {
             if (vgs.io.touch.y < y + dialog.pos.y || y + dialog.pos.y + h < vgs.io.touch.y) {
+                autoCloseTimer = 0;
                 hideDialog();
             } else {
                 touching = true;
