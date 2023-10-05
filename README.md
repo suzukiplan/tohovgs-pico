@@ -1,11 +1,13 @@
 # 東方BGM on VGS for RaspberryPi Pico
 
+![top.jpg](img/top.jpg)
+
 ## About
 
 - 本リポジトリでは、同人ハードウェア版 東方BGM on VGS (東方VGS実機版) のファームウェアと組み立て手順を提供します
 - 東方VGS実機版 は、東方Project二次創作です
 - 東方VGS実機版 は、各自で部品を集めて組み立てるものです
-- [誰でも自由に 東方VGS実機版 を販売できます](#hardware-sales)
+- [誰でも自由に 東方VGS実機版 を販売できます](#hardware-sales-license)
 
 ## Required Parts and Tools
 
@@ -18,11 +20,16 @@ __（日本国内で調達できない部品）__
 - [RP2040: Type-C 16MB (SoC)](https://ja.aliexpress.com/item/1005004005660504.html)
   - RaspberryPi Pico の開発ボードの互換製品です
   - 国内でも調達できる純正の RaspberryPi Pico だとフラッシュ容量不足のため全曲を入れることはできません
-- [MSP3223: ILI9341+FT6336U "3.2 with Touch (LCD+CTP)](https://ja.aliexpress.com/item/1005005878590372.html)
-  - 必ず **3.2 with Touch** （または 2.8 with Touch）を選択してください
+- [MSP3223: ILI9341+FT6336U "3.2 with Touch (LCD+CTP)](http://www.lcdwiki.com/3.2inch_IPS_SPI_Module_ILI9341)
+  - [通販サイト1: https://ja.aliexpress.com/item/1005005878590372.html](https://ja.aliexpress.com/item/1005005878590372.html)
+    - 必ず **3.2 with Touch** （または 2.8 with Touch）を選択してください
     - 3.5 インチモデルのディスプレイ IC（ST7796U）には未対応です
     - タッチ無しのモデルでは操作ができないため選択しないで下さい
-  - タッチ IC に `FT6336`、ディスプレイ IC に `ILI9341` を搭載した LCD であれば、他のものでも正常に動作します
+  - [通販サイト2: https://ja.aliexpress.com/item/1005005818608542.html](https://ja.aliexpress.com/item/1005005818608542.html)
+    - 必ず **Touch IPS** を選択してください
+  - [通販サイト3: https://ja.aliexpress.com/item/1005005906575827.html](https://ja.aliexpress.com/item/1005005906575827.html)
+    - 必ず **Touch IPS** を選択してください
+  - タッチ IC に `FT6336`、ディスプレイ IC に `ILI9341` を搭載した LCD であれば、MSP3223以外のものでも正常に動作します
 - [UDA1334A (DAC)](https://ja.aliexpress.com/item/1005001993192815.html)
   - UDA1334A は EOL (生産終了) なので純正品の調達は現在できません
   - 上記リンクは互換製品です
@@ -111,6 +118,38 @@ make
 make build
 ```
 
+## How to Use
+
+### Play and Pause
+
+- 曲名をタップすると再生が開始します
+- 再生中の曲名をタップするとポーズします
+- ポーズ中の曲名をタップするとレジューム（ポーズから復帰）します
+
+### Seek Bar
+
+画面右下のボタン（トグルスイッチ）で 1 ループ再生 or 無限ループの切り替えができます。
+
+|モード設定|動作|
+|:-:|:-|
+|![loop1](./img/button_loop1.png)|1回ループしたらフェードアウト|
+|![infinity](./img/button_infinity.png)|無限ループ|
+
+また、シークバーをスライドすることで演奏開始位置のシークができます。
+
+> 実機でのシーク処理には、RP2040 の CPU 処理性能の関係で 1 分間分をシークするのに 5 〜 10 秒程度の時間を要します。
+
+### Play Mode
+
+画面右上の 2 ボタン（トグルスイッチ）で次のように演奏モードを変更することができます。
+
+|モード設定|動作|
+|:-:|:-|
+|![swipe_on](./img/button_swipe_on.png) ![seq](./img/button_sequencial.png)|アルバム内でシーケンシャル再生|
+|![swipe_on](./img/button_swipe_on.png) ![random](./img/button_random.png)|アルバム内でランダム再生|
+|![swipe_off](./img/button_swipe_off.png) ![seq](./img/button_sequencial.png)|全曲でシーケンシャル再生|
+|![swipe_off](./img/button_swipe_off.png) ![random](./img/button_random.png)|全曲でランダム再生|
+
 ## License
 
 ### Software
@@ -136,13 +175,13 @@ make build
   - License: [MIT](./licenses-copy/vgssdk.txt)
   - `Copyright (c) 2023 Yoji Suzuki.`
 
-### Hardware Sales
+### Hardware Sales License
 
 次の条件を満たす場合、自身が開発した 東方VGS実機版 を販売することを許諾します。
 
 1. [東方Project（本家）の二次創作ガイドライン](https://touhou-project.news/guideline/)に反しないこと
 2. 製品マニュアル等に使用している OSS ライセンスを明示すること
-3. 購入者が自由に製品フラッシュメモリを更新する権利を奪うことを禁じます（具体的には、購入者が本リポジトリから最新のファームウェアに更新できる手段を提供することを必須要件とします）
+3. 購入者が本リポジトリから最新のファームウェアに更新できる手段を提供することを必須要件とします
 4. 販売に関する全ての保証業務（購入者へのサポート等）は、仮に本リポジトリ提供内容の不具合に起因する場合であっても全て販売者の責任で実施すること
 
 可能な限り販売開始前または販売開始後に X (旧 Twitter) で [suzukiplan](https://twitter.com/suzukiplan) をフォローの上、以下のメンションを投げてください。（これは強制ではありません）

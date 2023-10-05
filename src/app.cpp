@@ -18,7 +18,7 @@ static bool allSongFlag = false;
 static bool shuffleFlag = false;
 #define abs(x) (x < 0 ? -x : x)
 
-#define VERSION_CODE "5.00"
+#define VERSION_CODE "5.01"
 #define ALBUM_COUNT (sizeof(rom_songlist) / sizeof(Album))
 #define COLOR_BG 0b0001000101001000
 #define COLOR_LIST_BG 0b0000100010100100
@@ -247,6 +247,7 @@ static void showSeekingDialog(int percent)
 
 static void showMasterVolumeDialog()
 {
+    static int autoCloseTimer = 0;
     static bool touching;
     static bool ignoreTouch;
     static const int w = 232;
@@ -254,6 +255,14 @@ static void showMasterVolumeDialog()
     int x = (dialog.pos.w - w) / 2;
     int y = (dialog.pos.h - h) / 2;
     int masterVolume = vgs.bgm.getMasterVolume();
+
+    if (autoCloseTimer) {
+        autoCloseTimer--;
+        if (0 == autoCloseTimer) {
+            hideDialog();
+            return;
+        }
+    }
 
     vgs.gfx.startWrite();
     if (showDialog(DialogType::MasterVolume)) {
@@ -266,6 +275,7 @@ static void showMasterVolumeDialog()
         }
         touching = false;
         ignoreTouch = true;
+        autoCloseTimer = 0;
     }
 
     if (ignoreTouch) {
@@ -273,8 +283,10 @@ static void showMasterVolumeDialog()
             ignoreTouch = false;
         }
     } else if (vgs.io.touch.on) {
+        autoCloseTimer = 600;
         if (!touching) {
             if (vgs.io.touch.y < y + dialog.pos.y || y + dialog.pos.y + h < vgs.io.touch.y) {
+                autoCloseTimer = 0;
                 hideDialog();
             } else {
                 touching = true;
@@ -364,8 +376,8 @@ class TopBoardView : public View
         this->vpos.set(pos.w - 36, 8, 32, 24);
         this->apos.set(pos.w - 36 * 2, 8, 32, 24);
         this->spos.set(pos.w - 36 * 3, 8, 32, 24);
-        this->gfx->boxf(0, 0, 8 + 4 * (23 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
-        printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS  VER %s", VERSION_CODE);
+        this->gfx->boxf(0, 0, 8 + 4 * (18 + strlen(VERSION_CODE)), 14, COLOR_LIST_BG);
+        printSmallFontT(this->gfx, 4, 4, "TOUHOU BGM ON VGS %s", VERSION_CODE);
         printSmallFont(this->gfx, 4, 16, "INDEX     00000");
         printSmallFont(this->gfx, 4, 24, "LEFT TIME 00:00");
         this->renderVolumeButton();
@@ -619,6 +631,7 @@ class SeekbarView : public View
         } else if (32 + 164 < tx) {
             this->infinity = !this->infinity;
             gfx->startWrite();
+            gfx->setViewport(pos.x, pos.y, pos.w, pos.h);
             this->renderInfinity();
             gfx->endWrite();
         }
@@ -1349,6 +1362,14 @@ static inline void updatePlaying()
 
 extern "C" void vgs_loop()
 {
+    // 乱数を揺らす
+    if (vgs.io.touch.on) {
+        int n = (abs(vgs.io.touch.x) * abs(vgs.io.touch.y)) & 7;
+        for (int i = 0; i <= n; i++) {
+            rand();
+        }
+    }
+
     // ダイアログ処理中は通常のループ処理を実行しない
     if (dialog.on) {
         switch (dialog.type) {
