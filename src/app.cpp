@@ -283,7 +283,7 @@ static void showMasterVolumeDialog()
             ignoreTouch = false;
         }
     } else if (vgs.io.touch.on) {
-        autoCloseTimer = 60;
+        autoCloseTimer = 600;
         if (!touching) {
             if (vgs.io.touch.y < y + dialog.pos.y || y + dialog.pos.y + h < vgs.io.touch.y) {
                 autoCloseTimer = 0;
