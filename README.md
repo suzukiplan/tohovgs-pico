@@ -20,11 +20,16 @@ __（日本国内で調達できない部品）__
 - [RP2040: Type-C 16MB (SoC)](https://ja.aliexpress.com/item/1005004005660504.html)
   - RaspberryPi Pico の開発ボードの互換製品です
   - 国内でも調達できる純正の RaspberryPi Pico だとフラッシュ容量不足のため全曲を入れることはできません
-- [MSP3223: ILI9341+FT6336U "3.2 with Touch (LCD+CTP)](https://ja.aliexpress.com/item/1005005878590372.html)
-  - 必ず **3.2 with Touch** （または 2.8 with Touch）を選択してください
+- [MSP3223: ILI9341+FT6336U "3.2 with Touch (LCD+CTP)](http://www.lcdwiki.com/3.2inch_IPS_SPI_Module_ILI9341#Product_Description)
+  - [通販サイト1: https://ja.aliexpress.com/item/1005005878590372.html](https://ja.aliexpress.com/item/1005005878590372.html)
+    - 必ず **3.2 with Touch** （または 2.8 with Touch）を選択してください
     - 3.5 インチモデルのディスプレイ IC（ST7796U）には未対応です
     - タッチ無しのモデルでは操作ができないため選択しないで下さい
-  - タッチ IC に `FT6336`、ディスプレイ IC に `ILI9341` を搭載した LCD であれば、他のものでも正常に動作します
+  - [通販サイト2: https://ja.aliexpress.com/item/1005005818608542.html](https://ja.aliexpress.com/item/1005005818608542.html)
+    - 必ず **Touch IPS** を選択してください
+  - [通販サイト3: https://ja.aliexpress.com/item/1005005906575827.html](https://ja.aliexpress.com/item/1005005906575827.html)
+    - 必ず **Touch IPS** を選択してください
+  - タッチ IC に `FT6336`、ディスプレイ IC に `ILI9341` を搭載した LCD であれば、MSP3223以外のものでも正常に動作します
 - [UDA1334A (DAC)](https://ja.aliexpress.com/item/1005001993192815.html)
   - UDA1334A は EOL (生産終了) なので純正品の調達は現在できません
   - 上記リンクは互換製品です
